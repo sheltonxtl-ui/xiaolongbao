@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
-import { openai } from "@/lib/openai";
+import { getOpenAI } from "@/lib/openai";
 import { buildFlashcardPrompt } from "@/lib/prompt";
 
 export async function POST(req: Request) {
   try {
+    const openai = getOpenAI();
+    if (!openai) {
+      return NextResponse.json(
+        {
+          error:
+            "AI generation is not configured yet. Set OPENAI_API_KEY when you are ready.",
+          flashcards: [],
+        },
+        { status: 503 }
+      );
+    }
+
     const { text } = await req.json();
 
     const prompt = buildFlashcardPrompt(text);
