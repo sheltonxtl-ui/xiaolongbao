@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Lightweight “text → cards → study” emphasis (respect reduced motion) */
+:root {
+  --how-flow-border-rest: rgb(228 228 231);
+  --how-flow-border-active: rgb(165 180 252);
+  --how-flow-shadow-rest: 0 1px 2px rgb(0 0 0 / 0.04);
+  --how-flow-shadow-active: 0 0 0 3px rgb(99 102 241 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --how-flow-border-rest: rgb(39 39 42);
+    --how-flow-border-active: rgb(129 140 248 / 0.7);
+    --how-flow-shadow-rest: 0 1px 2px rgb(0 0 0 / 0.2);
+    --how-flow-shadow-active: 0 0 0 3px rgb(99 102 241 / 0.2);
+  }
+}
+
+@keyframes how-flow-glow {
+  0%,
+  100% {
+    border-color: var(--how-flow-border-rest);
+    box-shadow: var(--how-flow-shadow-rest);
+  }
+  40% {
+    border-color: var(--how-flow-border-active);
+    box-shadow: var(--how-flow-shadow-active);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .how-flow-pill {
+    animation: how-flow-glow 3s ease-in-out infinite;
+  }
+  .how-flow-pill-delay-0 {
+    animation-delay: 0s;
+  }
+  .how-flow-pill-delay-1 {
+    animation-delay: 1s;
+  }
+  .how-flow-pill-delay-2 {
+    animation-delay: 2s;
+  }
+}
