@@ -30,9 +30,7 @@ export default async function DeckStudyPage({ params }: Props) {
 
   return (
     <AppDashboardShell>
-      <div className="-mx-4 rounded-3xl bg-zinc-50 p-4 sm:-mx-6 sm:p-6 lg:-mx-8 lg:p-8 dark:bg-zinc-900/40">
-        <DeckStudyMode deckId={deck.id} deckTitle={deck.title} terms={terms} />
-      </div>
+      <DeckStudyMode deckId={deck.id} deckTitle={deck.title} terms={terms} />
 
       <div className="mt-14">
         <SiteFooter />
