@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 
 export const metadata: Metadata = {
-  title: { absolute: "Recall — AI flashcards from your notes" },
+  title: { absolute: "xiaolongbao — AI flashcards from your notes" },
   description:
     "Paste notes, get flashcards in seconds. Built for students who want to study smarter, not longer.",
 };
@@ -100,7 +100,7 @@ export default function HomePage() {
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-background p-8 shadow-sm dark:border-indigo-500/30">
                 <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
-                  The Recall way
+                  The xiaolongbao way
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-foreground">Paste → generate → study</h3>
                 <p className="mt-4 text-zinc-600 dark:text-zinc-400">
@@ -167,7 +167,7 @@ export default function HomePage() {
                 Reclaim the half-hour you’d spend making ten cards
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-lg text-indigo-100">
-                Students tell us the hardest part isn’t studying—it’s starting. Recall removes the
+                Students tell us the hardest part isn’t studying—it’s starting. Xiaolongbao removes the
                 setup tax so your first review happens today, not “after I finish the cards.”
               </p>
               <p className="mt-6 text-2xl font-bold sm:text-3xl">30 minutes → ~30 seconds</p>
@@ -264,7 +264,7 @@ export default function HomePage() {
                 Your notes are already written. Let’s make them memorable.
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-zinc-600 dark:text-zinc-400">
-                Join free, build three decks, and upgrade only if Recall becomes your default before
+                Join free, build three decks, and upgrade only if xiaolongbao becomes your default before
                 finals.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

@@ -26,7 +26,7 @@ export default function PricingPage() {
               Pricing
             </p>
             <h1 className="mx-auto mt-3 max-w-3xl text-center text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Start free. Upgrade when Recall is saving you real time.
+              Start free. Upgrade when xiaolongbao is saving you real time.
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-zinc-600 dark:text-zinc-400">
               Value-based limits: use the free tier to learn the product—then unlock Pro when you

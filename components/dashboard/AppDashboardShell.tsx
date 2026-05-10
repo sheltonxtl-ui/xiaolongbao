@@ -1,0 +1,216 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Avatar } from "@/components/catalyst/avatar";
+import {
+  Dropdown,
+  DropdownButton,
+  DropdownDivider,
+  DropdownItem,
+  DropdownLabel,
+  DropdownMenu,
+} from "@/components/catalyst/dropdown";
+import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from "@/components/catalyst/navbar";
+import { SidebarLayout } from "@/components/catalyst/sidebar-layout";
+import {
+  Sidebar,
+  SidebarBody,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarHeading,
+  SidebarItem,
+  SidebarLabel,
+  SidebarSection,
+  SidebarSpacer,
+} from "@/components/catalyst/sidebar";
+import {
+  ArrowRightStartOnRectangleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Cog8ToothIcon,
+  LightBulbIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  UserIcon,
+} from "@heroicons/react/16/solid";
+import {
+  ArrowTopRightOnSquareIcon,
+  Cog6ToothIcon,
+  HomeIcon,
+  InboxIcon,
+  MagnifyingGlassIcon,
+  MegaphoneIcon,
+  QuestionMarkCircleIcon,
+  SparklesIcon,
+  Square2StackIcon,
+} from "@heroicons/react/20/solid";
+
+function iconProps() {
+  return { "data-slot": "icon" as const };
+}
+
+export function AppDashboardShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const onDecks = pathname === "/decks" || pathname.startsWith("/decks/");
+  const onGenerate = pathname === "/generate" || pathname.startsWith("/generate/");
+  const onHome = pathname === "/";
+
+  const accountMenu = (
+    <>
+      <DropdownItem href="/pricing">
+        <UserIcon {...iconProps()} />
+        <DropdownLabel>My profile</DropdownLabel>
+      </DropdownItem>
+      <DropdownItem href="/pricing">
+        <Cog8ToothIcon {...iconProps()} />
+        <DropdownLabel>Settings</DropdownLabel>
+      </DropdownItem>
+      <DropdownDivider />
+      <DropdownItem href="/pricing">
+        <ShieldCheckIcon {...iconProps()} />
+        <DropdownLabel>{'Privacy & plans'}</DropdownLabel>
+      </DropdownItem>
+      <DropdownItem href="/pricing">
+        <LightBulbIcon {...iconProps()} />
+        <DropdownLabel>Share feedback</DropdownLabel>
+      </DropdownItem>
+      <DropdownDivider />
+      <DropdownItem href="/">
+        <ArrowRightStartOnRectangleIcon {...iconProps()} />
+        <DropdownLabel>Back to site</DropdownLabel>
+      </DropdownItem>
+    </>
+  );
+
+  const sidebar = (
+    <div className="flex h-full flex-col bg-white ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
+      <Sidebar>
+        <SidebarHeader>
+          <Dropdown>
+            <DropdownButton as={SidebarItem} className="lg:mb-2.5">
+              <Avatar initials="XL" alt="xiaolongbao" className="size-8 bg-indigo-600 text-white" />
+              <SidebarLabel>xiaolongbao</SidebarLabel>
+              <ChevronDownIcon {...iconProps()} />
+            </DropdownButton>
+            <DropdownMenu className="min-w-80 lg:min-w-64" anchor="bottom start">
+              <DropdownItem href="/pricing">
+                <Cog8ToothIcon {...iconProps()} />
+                <DropdownLabel>Workspace settings</DropdownLabel>
+              </DropdownItem>
+              <DropdownDivider />
+              <DropdownItem href="/decks">
+                <Avatar initials="XL" alt="" className="size-6 bg-indigo-600 text-white" />
+                <DropdownLabel>My decks</DropdownLabel>
+              </DropdownItem>
+              <DropdownItem href="/generate">
+                <Avatar initials="NB" alt="" className="size-6 bg-violet-500 text-white" />
+                <DropdownLabel>New cards</DropdownLabel>
+              </DropdownItem>
+              <DropdownDivider />
+              <DropdownItem href="/generate">
+                <PlusIcon {...iconProps()} />
+                <DropdownLabel>New deck…</DropdownLabel>
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+          <SidebarSection className="max-lg:hidden">
+            <SidebarItem href="/decks">
+              <MagnifyingGlassIcon {...iconProps()} />
+              <SidebarLabel>Search decks</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/generate">
+              <InboxIcon {...iconProps()} />
+              <SidebarLabel>Generate</SidebarLabel>
+            </SidebarItem>
+          </SidebarSection>
+        </SidebarHeader>
+        <SidebarBody>
+          <SidebarSection>
+            <SidebarItem href="/" current={onHome}>
+              <HomeIcon {...iconProps()} />
+              <SidebarLabel>Home</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/decks" current={onDecks}>
+              <Square2StackIcon {...iconProps()} />
+              <SidebarLabel>Decks</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/generate" current={onGenerate}>
+              <SparklesIcon {...iconProps()} />
+              <SidebarLabel>Generate</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/pricing">
+              <MegaphoneIcon {...iconProps()} />
+              <SidebarLabel>Pricing</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/pricing">
+              <Cog6ToothIcon {...iconProps()} />
+              <SidebarLabel>Account</SidebarLabel>
+            </SidebarItem>
+          </SidebarSection>
+          <SidebarSection className="max-lg:hidden">
+            <SidebarHeading>Shortcuts</SidebarHeading>
+            <SidebarItem href="/decks">Open deck library</SidebarItem>
+            <SidebarItem href="/generate">Create flashcards</SidebarItem>
+            <SidebarItem href="/pricing">Compare plans</SidebarItem>
+          </SidebarSection>
+          <SidebarSpacer />
+          <SidebarSection>
+            <SidebarItem href="/pricing">
+              <QuestionMarkCircleIcon {...iconProps()} />
+              <SidebarLabel>Support</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/">
+              <ArrowTopRightOnSquareIcon {...iconProps()} />
+              <SidebarLabel>Landing</SidebarLabel>
+            </SidebarItem>
+          </SidebarSection>
+        </SidebarBody>
+        <SidebarFooter className="max-lg:hidden">
+          <Dropdown>
+            <DropdownButton as={SidebarItem}>
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar initials="DL" square alt="" className="size-10 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white" />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm/5 font-medium text-zinc-950 dark:text-white">
+                    Demo learner
+                  </span>
+                  <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
+                    you@example.com
+                  </span>
+                </span>
+              </span>
+              <ChevronUpIcon {...iconProps()} />
+            </DropdownButton>
+            <DropdownMenu className="min-w-64" anchor="top start">
+              {accountMenu}
+            </DropdownMenu>
+          </Dropdown>
+        </SidebarFooter>
+      </Sidebar>
+    </div>
+  );
+
+  const navbar = (
+    <Navbar>
+      <NavbarSpacer />
+      <NavbarSection>
+        <NavbarItem href="/decks" aria-label="Search decks">
+          <MagnifyingGlassIcon {...iconProps()} />
+        </NavbarItem>
+        <NavbarItem href="/generate" aria-label="Generate flashcards">
+          <InboxIcon {...iconProps()} />
+        </NavbarItem>
+        <Dropdown>
+          <DropdownButton as={NavbarItem} aria-label="Account menu">
+            <Avatar initials="DL" square alt="" className="size-8 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white" />
+          </DropdownButton>
+          <DropdownMenu className="min-w-64" anchor="bottom end">
+            {accountMenu}
+          </DropdownMenu>
+        </Dropdown>
+      </NavbarSection>
+    </Navbar>
+  );
+
+  return <SidebarLayout navbar={navbar} sidebar={sidebar}>{children}</SidebarLayout>;
+}

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Recall — AI flashcards from your notes",
-    template: "%s — Recall",
+    default: "xiaolongbao — AI flashcards from your notes",
+    template: "%s — xiaolongbao",
   },
   description:
     "Paste notes, get flashcards in seconds. Free plan for students; Pro for unlimited decks, uploads, and exports.",

@@ -8,7 +8,7 @@ export function SiteHeader() {
           href="/"
           className="text-lg font-semibold tracking-tight text-foreground transition hover:opacity-80"
         >
-          Recall
+          xiaolongbao
         </Link>
         <nav
           className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-medium text-zinc-600 dark:text-zinc-400"
