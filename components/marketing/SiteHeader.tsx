@@ -27,6 +27,12 @@ export function SiteHeader() {
             Pricing
           </Link>
           <Link
+            href="/sign-in"
+            className="transition hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          >
+            Sign in
+          </Link>
+          <Link
             href="/signup"
             className="rounded-full bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
           >
