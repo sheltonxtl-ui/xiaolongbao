@@ -19,7 +19,8 @@ import {
 } from "@/components/catalyst/dialog";
 import { Heading } from "@/components/catalyst/heading";
 import { Text } from "@/components/catalyst/text";
-import type { DeckTerm } from "@/lib/decks-mock-data";
+import { DeckEmptyPanel } from "@/components/decks/DeckAsyncState";
+import type { DeckTerm } from "@/lib/decks/types";
 
 export type StudyFaceOrder = "term-first" | "definition-first";
 
@@ -118,19 +119,22 @@ export function DeckStudyMode({ deckId, deckTitle, terms }: DeckStudyModeProps) 
           ← Back to deck
         </Button>
         <div className="-mx-4 rounded-3xl bg-zinc-50 p-4 sm:-mx-6 sm:p-6 lg:-mx-8 lg:p-8 dark:bg-zinc-900/40">
-          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center dark:border-zinc-600 dark:bg-zinc-900/30">
-            <Heading id="study-empty-heading">No cards to study</Heading>
-            <Text className="mt-2">
-              Add terms in{" "}
-              <span className="font-medium text-zinc-950 dark:text-white">{deckTitle}</span>{" "}
-              before starting study mode.
-            </Text>
-            <div className="mt-6 flex justify-center">
+          <DeckEmptyPanel
+            headingId="study-empty-heading"
+            title="No cards to study"
+            description={
+              <>
+                Add terms in{" "}
+                <span className="font-medium text-zinc-950 dark:text-white">{deckTitle}</span>{" "}
+                before starting study mode.
+              </>
+            }
+            actions={
               <Button color="indigo" href={`/decks/${deckId}/manage`}>
                 Edit deck
               </Button>
-            </div>
-          </div>
+            }
+          />
         </div>
       </section>
     );

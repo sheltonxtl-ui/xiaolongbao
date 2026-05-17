@@ -9,11 +9,14 @@ export const metadata: Metadata = {
 
 function SignInFallback() {
   return (
-    <div className="w-full max-w-[400px] animate-pulse space-y-6">
-      <div className="h-8 w-40 rounded bg-neutral-200" />
-      <div className="h-12 w-full rounded-[10px] bg-neutral-100" />
-      <div className="h-12 w-full rounded-[10px] bg-neutral-100" />
-      <div className="h-12 w-full rounded-full bg-neutral-200" />
+    <div className="grid w-full max-w-sm animate-pulse grid-cols-1 gap-8">
+      <div className="space-y-2">
+        <div className="h-8 w-36 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+        <div className="h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800/80" />
+      </div>
+      <div className="h-10 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/80" />
+      <div className="h-10 w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/80" />
+      <div className="h-10 w-full rounded-lg bg-zinc-200 dark:bg-zinc-700" />
     </div>
   );
 }

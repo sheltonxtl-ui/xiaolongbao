@@ -1,13 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { Button } from "@/components/catalyst/button";
+import { Divider } from "@/components/catalyst/divider";
+import { Description, ErrorMessage, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
+import { Heading } from "@/components/catalyst/heading";
+import { Input } from "@/components/catalyst/input";
+import { Text, TextLink } from "@/components/catalyst/text";
+import { createAuthSupabaseClient, getAuthCallbackUrl } from "@/lib/auth/client";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
-
-const inputClassName =
-  "w-full rounded-[10px] border border-neutral-300 bg-white px-3.5 py-3 text-[15px] text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-900";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -42,22 +45,12 @@ export function SignUpForm() {
 
     setLoading(true);
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const supabase = createBrowserSupabaseClient({
-        isSingleton: false,
-        cookieOptions: {
-          path: "/",
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 60 * 60 * 24 * 365,
-        },
-      });
-
+      const supabase = createAuthSupabaseClient(true);
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${origin}/auth/callback?next=/decks`,
+          emailRedirectTo: getAuthCallbackUrl("/decks"),
         },
       });
 
@@ -79,83 +72,77 @@ export function SignUpForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="w-full max-w-[400px] space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-neutral-950">Sign up</h1>
+    <form onSubmit={onSubmit} className="grid w-full max-w-sm grid-cols-1 gap-8">
+      <div className="space-y-2">
+        <Heading>Create your account</Heading>
+        <Text>Get started with email or connect a provider below.</Text>
+      </div>
 
-      {message && (
-        <p className="text-sm text-red-600" role="alert">
-          {message}
-        </p>
-      )}
+      {message && <ErrorMessage role="alert">{message}</ErrorMessage>}
       {info && (
-        <p className="text-sm text-neutral-700" role="status">
+        <Description role="status" className="text-zinc-700 dark:text-zinc-300">
           {info}
-        </p>
+        </Description>
       )}
 
-      <div className="space-y-2">
-        <label htmlFor="signup-email" className="block text-[15px] text-neutral-950">
-          Email
-        </label>
-        <input
-          id="signup-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClassName}
-          placeholder="you@example.com"
-        />
+      <OAuthButtons disabled={loading} onError={setMessage} />
+
+      <div className="flex items-center gap-4">
+        <Divider soft className="flex-1" />
+        <Text className="shrink-0 text-zinc-400">or</Text>
+        <Divider soft className="flex-1" />
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="signup-password" className="block text-[15px] text-neutral-950">
-          Password
-        </label>
-        <input
-          id="signup-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClassName}
-        />
-      </div>
+      <Fieldset>
+        <Field>
+          <Label>Email</Label>
+          <Input
+            id="signup-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
+        </Field>
 
-      <div className="space-y-2">
-        <label htmlFor="signup-confirm" className="block text-[15px] text-neutral-950">
-          Confirm password
-        </label>
-        <input
-          id="signup-confirm"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className={inputClassName}
-        />
-      </div>
+        <Field>
+          <Label>Password</Label>
+          <Input
+            id="signup-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Description>Use at least 8 characters.</Description>
+        </Field>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-neutral-950 py-3.5 text-[15px] font-semibold text-white transition hover:bg-neutral-900 disabled:opacity-60"
-      >
+        <Field>
+          <Label>Confirm password</Label>
+          <Input
+            id="signup-confirm"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+        </Field>
+      </Fieldset>
+
+      <Button type="submit" color="dark" className="w-full" disabled={loading}>
         {loading ? "Creating account…" : "Create account"}
-      </button>
+      </Button>
 
-      <p className="text-center text-[15px] text-neutral-500">
-        Already have an account?{" "}
-        <Link href="/sign-in" className="font-bold text-neutral-950 underline-offset-4 hover:underline">
-          Sign in
-        </Link>
-      </p>
+      <Text className="text-center">
+        Already have an account? <TextLink href="/sign-in">Sign in</TextLink>
+      </Text>
     </form>
   );
 }

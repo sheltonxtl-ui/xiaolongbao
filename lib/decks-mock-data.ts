@@ -1,10 +1,7 @@
 import type { Deck } from "@/components/decks/DecksLibrary";
+import type { DeckTerm } from "@/lib/decks/types";
 
-export type DeckTerm = {
-  id: string;
-  question: string;
-  answer: string;
-};
+export type { DeckTerm };
 
 export const mockDecks: Deck[] = [
   {

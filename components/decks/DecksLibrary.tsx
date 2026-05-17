@@ -16,7 +16,9 @@ import {
   PaginationPrevious,
 } from "@/components/catalyst/pagination";
 import { Select } from "@/components/catalyst/select";
-import { Text } from "@/components/catalyst/text";
+import { Strong, Text } from "@/components/catalyst/text";
+import { DeckEmptyPanel } from "@/components/decks/DeckAsyncState";
+import { ImportDeckDialog } from "@/components/decks/ImportDeckDialog";
 
 export type Deck = {
   id: string;
@@ -64,10 +66,10 @@ function DeckStudyCard({ deck }: { deck: Deck }) {
       <Button
         color="indigo"
         href={`/decks/${deck.id}/study`}
-        className="shrink-0 px-2 py-1 text-xs/5 sm:px-2.5"
+        className="shrink-0 !inline-flex !h-7 !min-h-0 !items-center !justify-center !gap-x-1 !rounded-md !px-1.5 !py-0 !text-xs/5 !leading-none !font-semibold sm:!h-7 sm:!px-2 sm:!py-0 sm:!text-xs/5 *:data-[slot=icon]:!m-0 *:data-[slot=icon]:!size-3 sm:*:data-[slot=icon]:!size-3"
         aria-label={`Play ${deck.title}`}
       >
-        <PlayIcon data-slot="icon" className="size-3.5 sm:size-4" />
+        <PlayIcon data-slot="icon" />
         <span className="hidden sm:inline">Play</span>
       </Button>
     </article>
@@ -78,6 +80,7 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
   const [page, setPage] = useState(1);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -122,6 +125,8 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
 
   return (
     <>
+      <ImportDeckDialog open={importOpen} onClose={() => setImportOpen(false)} />
+
       <section className="w-full">
         <header className="mb-8">
           <Heading>Your decks</Heading>
@@ -131,7 +136,7 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
           </Text>
         </header>
 
-        <Fieldset className="rounded-2xl border border-zinc-950/10 bg-white p-4 shadow-xs ring-1 ring-zinc-950/5 dark:border-white/10 dark:bg-zinc-900/40 dark:ring-white/10 sm:p-5">
+        <Fieldset>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="grid w-full gap-6 sm:grid-cols-2 lg:max-w-xl lg:flex-1 xl:max-w-2xl">
               <Field>
@@ -158,7 +163,9 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
               </Field>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <Button outline>Import deck</Button>
+              <Button outline onClick={() => setImportOpen(true)}>
+                Import deck
+              </Button>
               <Button color="indigo" href="/generate">
                 New deck
               </Button>
@@ -167,12 +174,21 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
         </Fieldset>
 
         {filtered.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 px-6 py-16 text-center dark:border-zinc-600 dark:bg-zinc-900/30">
-            <p className="text-lg font-semibold text-foreground">No decks match your filters</p>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Try a different search or switch back to <strong className="font-semibold">All decks</strong>.
-            </p>
-          </div>
+          <DeckEmptyPanel
+            className="mt-10"
+            headingId="decks-filter-empty-heading"
+            title="No decks match your filters"
+            description={
+              <>
+                Try a different search or switch back to <Strong>All decks</Strong>.
+              </>
+            }
+            actions={
+              <Button outline onClick={() => { setQuery(""); setTab("all"); }}>
+                Clear filters
+              </Button>
+            }
+          />
         ) : (
           <>
             <Text className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">
