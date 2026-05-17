@@ -35,6 +35,10 @@ export type Deck = {
 
 const DECKS_PER_PAGE = 3;
 
+/** Shared column widths so creator, visibility, and counts line up across rows. */
+const DECK_ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_minmax(5rem,9rem)_4.75rem_minmax(4.25rem,5.25rem)_minmax(4.25rem,5.25rem)_auto] items-center gap-x-2 sm:gap-x-3";
+
 type FilterTab = "all" | "recent" | "public";
 
 function DeckStudyCard({ deck }: { deck: Deck }) {
@@ -42,8 +46,8 @@ function DeckStudyCard({ deck }: { deck: Deck }) {
     deck.visibility === "Public" ? "emerald" : "zinc";
 
   return (
-    <article className="group flex min-h-9 min-w-0 flex-nowrap items-center gap-x-2 overflow-x-auto bg-white px-2 py-1.5 transition-colors hover:bg-zinc-50 sm:gap-x-3 sm:px-3 dark:bg-transparent dark:hover:bg-white/5">
-      <h3 className="min-w-0 flex-1 truncate text-sm/6 font-semibold">
+    <>
+      <h3 className="min-w-0 truncate text-sm/6 font-semibold">
         <Link
           href={`/decks/${deck.id}/manage`}
           className="text-zinc-950 underline decoration-zinc-950/20 underline-offset-2 transition-colors hover:text-indigo-600 hover:decoration-indigo-600/30 dark:text-white dark:decoration-white/20 dark:hover:text-indigo-400 dark:hover:decoration-indigo-400/30"
@@ -51,28 +55,28 @@ function DeckStudyCard({ deck }: { deck: Deck }) {
           {deck.title}
         </Link>
       </h3>
-      <span className="max-w-[5.5rem] shrink-0 truncate text-xs/5 text-zinc-500 sm:max-w-[10rem] dark:text-zinc-400">
+      <span className="min-w-0 truncate text-xs/5 text-zinc-500 dark:text-zinc-400">
         {deck.creator}
       </span>
-      <Badge color={visibilityColor} className="shrink-0 py-px text-[0.6875rem]/4">
+      <Badge color={visibilityColor} className="w-fit py-px text-[0.6875rem]/4">
         {deck.visibility}
       </Badge>
-      <span className="shrink-0 whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
+      <span className="whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
         {deck.terms} terms
       </span>
-      <span className="shrink-0 whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
+      <span className="whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
         {deck.cardsInside} cards
       </span>
       <Button
         color="indigo"
         href={`/decks/${deck.id}/study`}
-        className="shrink-0 !inline-flex !h-7 !min-h-0 !items-center !justify-center !gap-x-1 !rounded-md !px-1.5 !py-0 !text-xs/5 !leading-none !font-semibold sm:!h-7 sm:!px-2 sm:!py-0 sm:!text-xs/5 *:data-[slot=icon]:!m-0 *:data-[slot=icon]:!size-3 sm:*:data-[slot=icon]:!size-3"
+        className="justify-self-end !inline-flex !h-7 !min-h-0 !items-center !justify-center !gap-x-1 !rounded-md !px-1.5 !py-0 !text-xs/5 !leading-none !font-semibold sm:!h-7 sm:!px-2 sm:!py-0 sm:!text-xs/5 *:data-[slot=icon]:!m-0 *:data-[slot=icon]:!size-3 sm:*:data-[slot=icon]:!size-3"
         aria-label={`Play ${deck.title}`}
       >
         <PlayIcon data-slot="icon" />
         <span className="hidden sm:inline">Play</span>
       </Button>
-    </article>
+    </>
   );
 }
 
@@ -204,11 +208,14 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
             </Text>
 
             <ul
-              className="mt-5 list-none divide-y divide-zinc-950/10 overflow-hidden rounded-lg border border-zinc-950/10 bg-white ring-1 ring-zinc-950/5 dark:divide-white/10 dark:border-white/10 dark:bg-zinc-900/40 dark:ring-white/10"
+              className="mt-5 list-none divide-y divide-zinc-950/10 overflow-x-auto overflow-y-hidden rounded-lg border border-zinc-950/10 bg-white ring-1 ring-zinc-950/5 dark:divide-white/10 dark:border-white/10 dark:bg-zinc-900/40 dark:ring-white/10"
               aria-label="Your decks"
             >
               {pagedDecks.map((deck) => (
-                <li key={deck.id}>
+                <li
+                  key={deck.id}
+                  className={`${DECK_ROW_GRID} min-h-9 min-w-[36rem] bg-white px-2 py-1.5 transition-colors hover:bg-zinc-50 sm:min-w-0 sm:px-3 dark:bg-transparent dark:hover:bg-white/5`}
+                >
                   <DeckStudyCard deck={deck} />
                 </li>
               ))}
