@@ -5,7 +5,7 @@ import { useState } from "react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Button } from "@/components/catalyst/button";
 import { Divider } from "@/components/catalyst/divider";
-import { ErrorMessage, Field, FieldGroup, Fieldset, Label } from "@/components/catalyst/fieldset";
+import { ErrorMessage, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
 import { Switch, SwitchField } from "@/components/catalyst/switch";
@@ -105,18 +105,16 @@ export function SignInForm() {
           />
         </Field>
 
-        <FieldGroup className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
           <SwitchField>
             <Label>Remember me</Label>
             <Switch checked={rememberMe} onChange={setRememberMe} name="remember" />
           </SwitchField>
 
-          <div className="flex justify-end">
-            <TextLink href="/forgot-password" className="text-sm/6">
-              Forgot password?
-            </TextLink>
-          </div>
-        </FieldGroup>
+          <TextLink href="/forgot-password" className="text-sm/6">
+            Forgot password?
+          </TextLink>
+        </div>
       </Fieldset>
 
       <Button type="submit" color="dark" className="w-full" disabled={loading}>

@@ -208,10 +208,7 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
               aria-label="Your decks"
             >
               {pagedDecks.map((deck) => (
-                <li
-                  key={deck.id}
-                  className="grid min-h-9 min-w-[36rem] grid-cols-[minmax(0,1fr)_minmax(5rem,9rem)_4.75rem_minmax(4.25rem,5.25rem)_minmax(4.25rem,5.25rem)_auto] items-center gap-x-2 bg-white px-2 py-1.5 transition-colors hover:bg-zinc-50 sm:min-w-0 sm:gap-x-3 sm:px-3 dark:bg-transparent dark:hover:bg-white/5"
-                >
+                <li key={deck.id} className="deck-list-row">
                   <DeckStudyCard deck={deck} />
                 </li>
               ))}
