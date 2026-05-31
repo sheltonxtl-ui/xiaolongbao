@@ -1,18 +1,6 @@
+import { buildFlashcardUserMessage } from "@/lib/flashcards/system-prompt";
+
+/** @deprecated Use FLASHCARD_GENERATOR_SYSTEM_PROMPT with generateFlashcardsFromNotes instead. */
 export function buildFlashcardPrompt(text: string) {
-    return `
-  Convert the following text into concise flashcards.
-  
-  Rules:
-  - Each flashcard must have a clear question and answer
-  - Keep answers short and precise
-  - Focus on key concepts
-  
-  Return ONLY JSON in this format:
-  [
-    { "question": "...", "answer": "..." }
-  ]
-  
-  Text:
-  ${text}
-  `;
-  }
+  return buildFlashcardUserMessage(text);
+}

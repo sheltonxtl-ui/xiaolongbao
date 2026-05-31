@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/catalyst/button";
-import { Description, ErrorMessage, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
+import { Field, Fieldset, Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
 import { Text, TextLink } from "@/components/catalyst/text";
@@ -51,11 +51,15 @@ export function ForgotPasswordForm() {
         <Text>Enter the email you use for xiaolongbao. We&apos;ll send a link to reset your password.</Text>
       </div>
 
-      {message && <ErrorMessage role="alert">{message}</ErrorMessage>}
+      {message && (
+        <Text role="alert" className="text-red-600 dark:text-red-500">
+          {message}
+        </Text>
+      )}
       {sent && (
-        <Description role="status" className="text-zinc-700 dark:text-zinc-300">
+        <Text role="status" className="text-zinc-700 dark:text-zinc-300">
           If an account exists for that email, you&apos;ll receive a reset link shortly.
-        </Description>
+        </Text>
       )}
 
       <Fieldset>

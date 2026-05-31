@@ -5,7 +5,7 @@ import { useState } from "react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Button } from "@/components/catalyst/button";
 import { Divider } from "@/components/catalyst/divider";
-import { ErrorMessage, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
+import { Field, Fieldset, Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
 import { Switch, SwitchField } from "@/components/catalyst/switch";
@@ -67,7 +67,11 @@ export function SignInForm() {
         <Text>Welcome back. Sign in to manage decks and study.</Text>
       </div>
 
-      {displayError && <ErrorMessage role="alert">{displayError}</ErrorMessage>}
+      {displayError && (
+        <Text role="alert" className="text-red-600 dark:text-red-500">
+          {displayError}
+        </Text>
+      )}
 
       <OAuthButtons disabled={loading} onError={setMessage} />
 

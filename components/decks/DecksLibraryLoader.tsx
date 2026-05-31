@@ -94,14 +94,9 @@ export function DecksLibraryLoader({
           className="mt-6"
           variant="plain"
           actions={
-            <>
-              <Button color="indigo" href="/generate">
-                New deck
-              </Button>
-              <Button outline href="/generate">
-                Generate from notes
-              </Button>
-            </>
+            <Button color="indigo" href="/generate">
+              New deck
+            </Button>
           }
         />
       </section>

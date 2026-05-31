@@ -1,17 +1,21 @@
-"use client";
+import type { Metadata } from "next";
+import { AppDashboardShell } from "@/components/dashboard/AppDashboardShell";
+import { GenerateDeckLoader } from "@/components/decks/GenerateDeckLoader";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
-import { useState } from "react";
-import FlashcardForm from "@/components/FlashcardForm";
-import FlashcardList from "@/components/FlashcardList";
+export const metadata: Metadata = {
+  title: "New deck — xiaolongbao",
+  description: "Generate flashcards from your notes or import an existing deck.",
+};
 
-/** Original flashcard demo — marketing home is now `/`. */
 export default function GeneratePage() {
-  const [cards, setCards] = useState([]);
-
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <FlashcardForm onResult={setCards} />
-      <FlashcardList cards={cards} />
-    </main>
+    <AppDashboardShell>
+      <GenerateDeckLoader />
+
+      <div className="mt-14">
+        <SiteFooter />
+      </div>
+    </AppDashboardShell>
   );
 }

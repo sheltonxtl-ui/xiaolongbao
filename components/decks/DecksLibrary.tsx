@@ -18,7 +18,6 @@ import {
 import { Select } from "@/components/catalyst/select";
 import { Strong, Text } from "@/components/catalyst/text";
 import { DeckEmptyPanel } from "@/components/decks/DeckAsyncState";
-import { ImportDeckDialog } from "@/components/decks/ImportDeckDialog";
 
 export type Deck = {
   id: string;
@@ -80,8 +79,6 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
   const [page, setPage] = useState(1);
-  const [importOpen, setImportOpen] = useState(false);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = decks.slice();
@@ -124,10 +121,7 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
   const rangeEnd = Math.min(currentPage * DECKS_PER_PAGE, filtered.length);
 
   return (
-    <>
-      <ImportDeckDialog open={importOpen} onClose={() => setImportOpen(false)} />
-
-      <section className="w-full">
+    <section className="w-full">
         <header className="mb-8">
           <Heading>Your decks</Heading>
           <Text className="mt-2 max-w-2xl">
@@ -163,9 +157,6 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
               </Field>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <Button outline onClick={() => setImportOpen(true)}>
-                Import deck
-              </Button>
               <Button color="indigo" href="/generate">
                 New deck
               </Button>
@@ -242,7 +233,6 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
             ) : null}
           </>
         )}
-      </section>
-    </>
+    </section>
   );
 }

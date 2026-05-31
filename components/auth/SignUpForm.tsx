@@ -5,7 +5,7 @@ import { useState } from "react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { Button } from "@/components/catalyst/button";
 import { Divider } from "@/components/catalyst/divider";
-import { Description, ErrorMessage, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
+import { Description, Field, Fieldset, Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
 import { Text, TextLink } from "@/components/catalyst/text";
@@ -78,11 +78,15 @@ export function SignUpForm() {
         <Text>Get started with email or connect a provider below.</Text>
       </div>
 
-      {message && <ErrorMessage role="alert">{message}</ErrorMessage>}
+      {message && (
+        <Text role="alert" className="text-red-600 dark:text-red-500">
+          {message}
+        </Text>
+      )}
       {info && (
-        <Description role="status" className="text-zinc-700 dark:text-zinc-300">
+        <Text role="status" className="text-zinc-700 dark:text-zinc-300">
           {info}
-        </Description>
+        </Text>
       )}
 
       <OAuthButtons disabled={loading} onError={setMessage} />

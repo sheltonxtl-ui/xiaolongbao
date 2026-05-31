@@ -315,6 +315,71 @@ export async function updateCard(
   return { ok: true, data: mapCardRow(data) };
 }
 
+export async function createDeckWithCards(
+  title: string,
+  cards: { question: string; answer: string }[],
+  supabaseOverride?: DbClient,
+): Promise<DeckRepoResult<{ deckId: string }>> {
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    return { ok: false, error: "Deck title is required.", code: "UNKNOWN" };
+  }
+
+  if (cards.length === 0) {
+    return { ok: false, error: "Add at least one card before saving.", code: "UNKNOWN" };
+  }
+
+  const clientResult = supabaseOverride
+    ? ({ ok: true as const, data: supabaseOverride })
+    : await getClient();
+  if (!clientResult.ok) {
+    if (clientResult.code === "NOT_CONFIGURED") {
+      return {
+        ok: true,
+        data: { deckId: `deck_${Date.now()}` },
+      };
+    }
+    return clientResult;
+  }
+
+  const supabase = clientResult.data;
+  const profileResult = await getCurrentProfile(supabase);
+  if (!profileResult.ok) return profileResult;
+
+  const { data: deckRow, error: deckError } = await supabase
+    .from("deck")
+    .insert({
+      title: trimmedTitle,
+      profile_id: profileResult.data.id,
+      is_public: false,
+    })
+    .select("id")
+    .single();
+
+  if (deckError || !deckRow) {
+    return {
+      ok: false,
+      error: deckError?.message ?? "Could not create deck.",
+      code: "UNKNOWN",
+    };
+  }
+
+  const { error: cardsError } = await supabase.from("card").insert(
+    cards.map((card, index) => ({
+      deck_id: deckRow.id,
+      front_question: card.question,
+      back_answer: card.answer,
+      order: index,
+    })),
+  );
+
+  if (cardsError) {
+    return { ok: false, error: cardsError.message, code: "UNKNOWN" };
+  }
+
+  return { ok: true, data: { deckId: deckRow.id } };
+}
+
 export async function deleteCard(cardId: string): Promise<DeckRepoResult<null>> {
   if (isLocalCardId(cardId)) {
     return { ok: true, data: null };
