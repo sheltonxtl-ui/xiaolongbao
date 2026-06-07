@@ -29,9 +29,9 @@ export function SwitchField({
       className={clsx(
         className,
         // Base layout
-        'grid grid-cols-[1fr_auto] gap-x-8 gap-y-1 sm:grid-cols-[1fr_auto]',
+        'grid grid-cols-[1fr_auto] items-center gap-x-8 gap-y-1 sm:grid-cols-[1fr_auto]',
         // Control layout
-        '*:data-[slot=control]:col-start-2 *:data-[slot=control]:self-start sm:*:data-[slot=control]:mt-0.5',
+        '*:data-[slot=control]:col-start-2 *:data-[slot=control]:self-center',
         // Label layout
         '*:data-[slot=label]:col-start-1 *:data-[slot=label]:row-start-1',
         // Description layout
@@ -151,7 +151,7 @@ export function Switch({
       className={clsx(
         className,
         // Base styles
-        'group relative isolate inline-flex h-6 w-10 cursor-default rounded-full p-[3px] sm:h-5 sm:w-8',
+        'group relative isolate inline-flex h-6 w-10 cursor-pointer items-center rounded-full p-[3px] sm:h-5 sm:w-8',
         // Transitions
         'transition duration-0 ease-in-out data-changing:duration-200',
         // Outline and background color in forced-colors mode so switch is still visible

@@ -21,12 +21,10 @@ export function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
-    setInfo(null);
 
     if (!isConfigured) {
       setMessage("Supabase environment variables are missing. Add them to .env.local.");
@@ -65,7 +63,12 @@ export function SignUpForm() {
         return;
       }
 
-      setInfo("Check your email to confirm your account, then sign in.");
+      const params = new URLSearchParams({ message: "check-email" });
+      if (email.trim()) {
+        params.set("email", email.trim());
+      }
+      router.push(`/sign-in?${params.toString()}`);
+      router.refresh();
     } finally {
       setLoading(false);
     }
@@ -81,11 +84,6 @@ export function SignUpForm() {
       {message && (
         <Text role="alert" className="text-red-600 dark:text-red-500">
           {message}
-        </Text>
-      )}
-      {info && (
-        <Text role="status" className="text-zinc-700 dark:text-zinc-300">
-          {info}
         </Text>
       )}
 

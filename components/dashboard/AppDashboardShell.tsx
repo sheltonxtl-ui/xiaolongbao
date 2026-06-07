@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { Avatar } from "@/components/catalyst/avatar";
 import {
   Dropdown,
@@ -28,9 +29,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   Cog8ToothIcon,
-  LightBulbIcon,
   PlusIcon,
-  ShieldCheckIcon,
   UserIcon,
 } from "@heroicons/react/16/solid";
 import {
@@ -44,6 +43,9 @@ import {
   SparklesIcon,
   Square2StackIcon,
 } from "@heroicons/react/20/solid";
+import { signOut } from "@/lib/auth/client";
+import { getUserDisplayName, getUserEmail, getUserInitials } from "@/lib/auth/display";
+import { useAuthUser } from "@/lib/hooks/useAuthUser";
 
 function iconProps() {
   return { "data-slot": "icon" as const };
@@ -51,11 +53,34 @@ function iconProps() {
 
 export function AppDashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isSignedIn } = useAuthUser();
+  const [signingOut, setSigningOut] = useState(false);
+
   const onDecks = pathname === "/decks" || pathname.startsWith("/decks/");
   const onGenerate = pathname === "/generate" || pathname.startsWith("/generate/");
   const onHome = pathname === "/";
 
-  const accountMenu = (
+  const displayName = user ? getUserDisplayName(user) : "Guest";
+  const displayEmail = user ? getUserEmail(user) : "";
+  const initials = user ? getUserInitials(user) : "G";
+
+  async function handleSignOut() {
+    if (signingOut) {
+      return;
+    }
+
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.push("/");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  const accountMenu = isSignedIn ? (
     <>
       <DropdownItem href="/pricing">
         <UserIcon {...iconProps()} />
@@ -66,18 +91,25 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
         <DropdownLabel>Settings</DropdownLabel>
       </DropdownItem>
       <DropdownDivider />
-      <DropdownItem href="/pricing">
-        <ShieldCheckIcon {...iconProps()} />
-        <DropdownLabel>{'Privacy & plans'}</DropdownLabel>
-      </DropdownItem>
-      <DropdownItem href="/pricing">
-        <LightBulbIcon {...iconProps()} />
-        <DropdownLabel>Share feedback</DropdownLabel>
+      <DropdownItem href="/">
+        <ArrowTopRightOnSquareIcon {...iconProps()} />
+        <DropdownLabel>Back to site</DropdownLabel>
       </DropdownItem>
       <DropdownDivider />
-      <DropdownItem href="/">
+      <DropdownItem onClick={handleSignOut} disabled={signingOut}>
         <ArrowRightStartOnRectangleIcon {...iconProps()} />
-        <DropdownLabel>Back to site</DropdownLabel>
+        <DropdownLabel>{signingOut ? "Logging out…" : "Log out"}</DropdownLabel>
+      </DropdownItem>
+    </>
+  ) : (
+    <>
+      <DropdownItem href="/sign-in">
+        <ArrowRightStartOnRectangleIcon {...iconProps()} />
+        <DropdownLabel>Sign in</DropdownLabel>
+      </DropdownItem>
+      <DropdownItem href="/signup">
+        <UserIcon {...iconProps()} />
+        <DropdownLabel>Create account</DropdownLabel>
       </DropdownItem>
     </>
   );
@@ -166,25 +198,37 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
           </SidebarSection>
         </SidebarBody>
         <SidebarFooter className="max-lg:hidden">
-          <Dropdown>
-            <DropdownButton as={SidebarItem}>
-              <span className="flex min-w-0 items-center gap-3">
-                <Avatar initials="DL" square alt="" className="size-10 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white" />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm/5 font-medium text-zinc-950 dark:text-white">
-                    Demo learner
-                  </span>
-                  <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
-                    you@example.com
+          {isSignedIn ? (
+            <Dropdown>
+              <DropdownButton as={SidebarItem}>
+                <span className="flex min-w-0 items-center gap-3">
+                  <Avatar
+                    initials={initials}
+                    square
+                    alt={displayName}
+                    className="size-10 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm/5 font-medium text-zinc-950 dark:text-white">
+                      {displayName}
+                    </span>
+                    <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
+                      {displayEmail}
+                    </span>
                   </span>
                 </span>
-              </span>
-              <ChevronUpIcon {...iconProps()} />
-            </DropdownButton>
-            <DropdownMenu className="min-w-64" anchor="top start">
-              {accountMenu}
-            </DropdownMenu>
-          </Dropdown>
+                <ChevronUpIcon {...iconProps()} />
+              </DropdownButton>
+              <DropdownMenu className="min-w-64" anchor="top start">
+                {accountMenu}
+              </DropdownMenu>
+            </Dropdown>
+          ) : (
+            <SidebarItem href="/sign-in">
+              <ArrowRightStartOnRectangleIcon {...iconProps()} />
+              <SidebarLabel>Sign in</SidebarLabel>
+            </SidebarItem>
+          )}
         </SidebarFooter>
       </Sidebar>
     </div>
@@ -201,8 +245,13 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
           <InboxIcon {...iconProps()} />
         </NavbarItem>
         <Dropdown>
-          <DropdownButton as={NavbarItem} aria-label="Account menu">
-            <Avatar initials="DL" square alt="" className="size-8 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white" />
+          <DropdownButton as={NavbarItem} aria-label={isSignedIn ? "Account menu" : "Sign in"}>
+            <Avatar
+              initials={initials}
+              square
+              alt={displayName}
+              className="size-8 bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-white"
+            />
           </DropdownButton>
           <DropdownMenu className="min-w-64" anchor="bottom end">
             {accountMenu}

@@ -47,6 +47,7 @@ export function OAuthButtons({
         provider,
         options: {
           redirectTo: getAuthCallbackUrl(redirectNext),
+          ...(provider === "discord" ? { scopes: "identify email" } : {}),
         },
       });
 
@@ -57,7 +58,10 @@ export function OAuthButtons({
 
       if (data.url) {
         window.location.assign(data.url);
+        return;
       }
+
+      onError?.("Could not start social sign-in. Check your connection and try again.");
     } finally {
       setLoadingProvider(null);
     }

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { AuthOAuthErrorHandler } from "@/components/auth/AuthOAuthErrorHandler";
+import { AuthRecoveryHashHandler } from "@/components/auth/AuthRecoveryHashHandler";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,7 +34,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Suspense fallback={null}>
+          <AuthOAuthErrorHandler />
+          <AuthRecoveryHashHandler />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/catalyst/button";
 import { Field, Fieldset, Label } from "@/components/catalyst/fieldset";
@@ -11,10 +12,15 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 
 export function ForgotPasswordForm() {
+  const searchParams = useSearchParams();
   const { isConfigured } = getSupabasePublicEnv();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    searchParams.get("error") === "recovery-expired"
+      ? "That reset link has expired. Enter your email below to receive a new one."
+      : null,
+  );
   const [sent, setSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -30,7 +36,7 @@ export function ForgotPasswordForm() {
     try {
       const supabase = createBrowserSupabaseClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: getAuthCallbackUrl("/sign-in"),
+        redirectTo: getAuthCallbackUrl("/reset-password"),
       });
 
       if (error) {
