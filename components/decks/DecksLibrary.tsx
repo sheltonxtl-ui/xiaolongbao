@@ -30,31 +30,37 @@ export type Deck = {
   updatedRank: number;
   visibility: "Public" | "Private";
   mastery: number;
+  isCommunityDeck?: boolean;
 };
 
 const DECKS_PER_PAGE = 3;
 
-type FilterTab = "all" | "recent" | "public";
+type FilterTab = "all" | "recent" | "public" | "community";
 
 function DeckStudyCard({ deck }: { deck: Deck }) {
-  const visibilityColor: Parameters<typeof Badge>[0]["color"] =
-    deck.visibility === "Public" ? "emerald" : "zinc";
+  const isCommunity = deck.isCommunityDeck === true;
+  const visibilityColor: Parameters<typeof Badge>[0]["color"] = isCommunity
+    ? "violet"
+    : deck.visibility === "Public"
+      ? "emerald"
+      : "zinc";
+  const manageHref = isCommunity ? `/decks/${deck.id}/study` : `/decks/${deck.id}/manage`;
 
   return (
     <>
       <h3 className="min-w-0 truncate text-sm/6 font-semibold">
         <Link
-          href={`/decks/${deck.id}/manage`}
+          href={manageHref}
           className="text-zinc-950 underline decoration-zinc-950/20 underline-offset-2 transition-colors hover:text-indigo-600 hover:decoration-indigo-600/30 dark:text-white dark:decoration-white/20 dark:hover:text-indigo-400 dark:hover:decoration-indigo-400/30"
         >
           {deck.title}
         </Link>
       </h3>
       <span className="min-w-0 truncate text-xs/5 text-zinc-500 dark:text-zinc-400">
-        {deck.creator}
+        {isCommunity ? `by ${deck.creator}` : deck.creator}
       </span>
       <Badge color={visibilityColor} className="w-fit py-px text-[0.6875rem]/4">
-        {deck.visibility}
+        {isCommunity ? "Community Deck" : deck.visibility}
       </Badge>
       <span className="whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
         {deck.terms} terms
@@ -84,7 +90,9 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
     let list = decks.slice();
 
     if (tab === "public") {
-      list = list.filter((d) => d.visibility === "Public");
+      list = list.filter((d) => d.visibility === "Public" && !d.isCommunityDeck);
+    } else if (tab === "community") {
+      list = list.filter((d) => d.isCommunityDeck);
     } else if (tab === "recent") {
       list = [...list].sort((a, b) => a.updatedRank - b.updatedRank);
     }
@@ -125,8 +133,8 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
         <header className="mb-8">
           <Heading>Your decks</Heading>
           <Text className="mt-2 max-w-2xl">
-            Search, filter, and play a deck to keep momentum. Narrow rows show title, creator,
-            visibility, and counts at a glance.
+            Search, filter, and play a deck to keep momentum. Your library includes personal decks
+            and community decks you have saved.
           </Text>
         </header>
 
@@ -153,6 +161,7 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
                   <option value="all">All decks</option>
                   <option value="recent">Recently updated</option>
                   <option value="public">Public only</option>
+                  <option value="community">Community saved</option>
                 </Select>
               </Field>
             </div>
@@ -199,7 +208,14 @@ export function DecksLibrary({ decks }: { decks: Deck[] }) {
               aria-label="Your decks"
             >
               {pagedDecks.map((deck) => (
-                <li key={deck.id} className="deck-list-row">
+                <li
+                  key={deck.id}
+                  className={
+                    deck.isCommunityDeck
+                      ? "deck-list-row bg-violet-50/50 dark:bg-violet-950/20"
+                      : "deck-list-row"
+                  }
+                >
                   <DeckStudyCard deck={deck} />
                 </li>
               ))}

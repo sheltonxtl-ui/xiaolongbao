@@ -58,6 +58,7 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
   const [signingOut, setSigningOut] = useState(false);
 
   const onDecks = pathname === "/decks" || pathname.startsWith("/decks/");
+  const onExplore = pathname === "/explore" || pathname.startsWith("/explore/");
   const onGenerate = pathname === "/generate" || pathname.startsWith("/generate/");
   const onHome = pathname === "/";
 
@@ -166,6 +167,10 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
               <Square2StackIcon {...iconProps()} />
               <SidebarLabel>Decks</SidebarLabel>
             </SidebarItem>
+            <SidebarItem href="/explore" current={onExplore}>
+              <MagnifyingGlassIcon {...iconProps()} />
+              <SidebarLabel>Explore</SidebarLabel>
+            </SidebarItem>
             <SidebarItem href="/generate" current={onGenerate}>
               <SparklesIcon {...iconProps()} />
               <SidebarLabel>Generate</SidebarLabel>
@@ -182,6 +187,7 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
           <SidebarSection className="max-lg:hidden">
             <SidebarHeading>Shortcuts</SidebarHeading>
             <SidebarItem href="/decks">Open deck library</SidebarItem>
+            <SidebarItem href="/explore">Browse community decks</SidebarItem>
             <SidebarItem href="/generate">Create flashcards</SidebarItem>
             <SidebarItem href="/pricing">Compare plans</SidebarItem>
           </SidebarSection>
@@ -238,7 +244,7 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
     <Navbar>
       <NavbarSpacer />
       <NavbarSection>
-        <NavbarItem href="/decks" aria-label="Search decks">
+        <NavbarItem href="/explore" aria-label="Explore community decks">
           <MagnifyingGlassIcon {...iconProps()} />
         </NavbarItem>
         <NavbarItem href="/generate" aria-label="Generate flashcards">
