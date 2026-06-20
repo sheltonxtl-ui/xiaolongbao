@@ -1,4 +1,4 @@
-export const PRO_PRICE_LABEL = "$9";
+export const PRO_PRICE_LABEL = "$19.99";
 export const PRO_INTERVAL = "/month";
 
 export type PlanId = "free" | "pro";
@@ -21,7 +21,7 @@ export const planHighlights: Record<
     interval: PRO_INTERVAL,
     blurb: "Unlimited decks, uploads, and exports.",
     cta: "Upgrade to Pro",
-    href: "/signup",
+    href: "/pricing/upgrade",
   },
 };
 

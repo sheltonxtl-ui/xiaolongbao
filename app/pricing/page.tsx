@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ProPricingCheckoutCta } from "@/components/billing/ProPricingCheckoutCta";
 import { FAQSection } from "@/components/marketing/FAQSection";
 import { PricingCard } from "@/components/marketing/PricingCard";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -69,6 +70,7 @@ export default function PricingPage() {
                 ]}
                 ctaLabel={pro.cta}
                 ctaHref={pro.href}
+                cta={<ProPricingCheckoutCta label={pro.cta} />}
                 emphasized
                 badge="Best for exam season"
               />
@@ -195,10 +197,10 @@ export default function PricingPage() {
                   Get started free
                 </Link>
                 <Link
-                  href="/"
+                  href="/pricing/upgrade"
                   className="inline-flex w-full items-center justify-center rounded-full border border-indigo-300/60 px-8 py-3.5 font-semibold text-white transition hover:bg-indigo-500/30 sm:w-auto"
                 >
-                  Back to home
+                  Upgrade to Pro
                 </Link>
               </div>
             </div>

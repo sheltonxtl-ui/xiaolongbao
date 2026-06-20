@@ -1,13 +1,23 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 function getSiteOrigin() {
+  // Prefer the live browser origin so OAuth/password redirects stay on the
+  // current deployment (Vercel prod, preview, or localhost) instead of a
+  // baked-in NEXT_PUBLIC_SITE_URL that may still point at localhost.
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (configured) {
     return configured;
   }
-  if (typeof window !== "undefined") {
-    return window.location.origin;
+
+  const vercelUrl = process.env.VERCEL_URL?.replace(/\/$/, "");
+  if (vercelUrl) {
+    return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
   }
+
   return "";
 }
 

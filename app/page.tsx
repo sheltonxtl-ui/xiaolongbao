@@ -6,6 +6,7 @@ import { HowItWorksSection } from "@/components/marketing/HowItWorksSection";
 import { PricingCard } from "@/components/marketing/PricingCard";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
+import { PRO_INTERVAL, PRO_PRICE_LABEL } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: { absolute: "xiaolongbao — AI flashcards from your notes" },
@@ -233,8 +234,8 @@ export default function HomePage() {
               />
               <PricingCard
                 name="Pro"
-                price="$9"
-                interval="/month"
+                price={PRO_PRICE_LABEL}
+                interval={PRO_INTERVAL}
                 description="For heavy courseloads and group study."
                 features={[
                   "Unlimited decks & cards",

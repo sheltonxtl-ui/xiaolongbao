@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 export type PricingCardProps = {
   name: string;
@@ -8,6 +9,7 @@ export type PricingCardProps = {
   features: string[];
   ctaLabel: string;
   ctaHref: string;
+  cta?: ReactNode;
   emphasized?: boolean;
   badge?: string;
 };
@@ -20,6 +22,7 @@ export function PricingCard({
   features,
   ctaLabel,
   ctaHref,
+  cta,
   emphasized,
   badge,
 }: PricingCardProps) {
@@ -58,16 +61,18 @@ export function PricingCard({
           </li>
         ))}
       </ul>
-      <Link
-        href={ctaHref}
-        className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
-          emphasized
-            ? "bg-indigo-600 text-white hover:bg-indigo-500"
-            : "border border-zinc-300 bg-background text-foreground hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-900"
-        }`}
-      >
-        {ctaLabel}
-      </Link>
+      {cta ?? (
+        <Link
+          href={ctaHref}
+          className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+            emphasized
+              ? "bg-indigo-600 text-white hover:bg-indigo-500"
+              : "border border-zinc-300 bg-background text-foreground hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-900"
+          }`}
+        >
+          {ctaLabel}
+        </Link>
+      )}
     </div>
   );
 }
