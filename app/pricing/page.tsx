@@ -6,6 +6,7 @@ import { PricingCard } from "@/components/marketing/PricingCard";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { comparisonRows, faqItems, planHighlights } from "@/lib/pricing";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -13,7 +14,12 @@ export const metadata: Metadata = {
     "Free for getting started. Pro for unlimited decks, document upload, exports, sharing, and analytics.",
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const free = planHighlights.free;
   const pro = planHighlights.pro;
 
@@ -70,7 +76,7 @@ export default function PricingPage() {
                 ]}
                 ctaLabel={pro.cta}
                 ctaHref={pro.href}
-                cta={<ProPricingCheckoutCta label={pro.cta} />}
+                cta={<ProPricingCheckoutCta isSignedIn={Boolean(user)} label={pro.cta} />}
                 emphasized
                 badge="Best for exam season"
               />
@@ -197,10 +203,10 @@ export default function PricingPage() {
                   Get started free
                 </Link>
                 <Link
-                  href="/pricing/upgrade"
+                  href={user ? "/pricing/upgrade" : "/sign-in?next=/pricing/upgrade"}
                   className="inline-flex w-full items-center justify-center rounded-full border border-indigo-300/60 px-8 py-3.5 font-semibold text-white transition hover:bg-indigo-500/30 sm:w-auto"
                 >
-                  Upgrade to Pro
+                  {user ? "Upgrade to Pro" : "Sign in to upgrade"}
                 </Link>
               </div>
             </div>

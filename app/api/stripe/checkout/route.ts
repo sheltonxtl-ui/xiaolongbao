@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getStripeConfig, stripeConfigErrorMessage } from "@/lib/stripe/config";
+import {
+  getStripeConfig,
+  stripeCheckoutErrorMessage,
+  stripeConfigErrorMessage,
+} from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -64,6 +68,6 @@ export async function POST() {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Stripe checkout session error:", error);
-    return NextResponse.json({ error: "Could not start checkout. Try again shortly." }, { status: 500 });
+    return NextResponse.json({ error: stripeCheckoutErrorMessage(error) }, { status: 500 });
   }
 }
