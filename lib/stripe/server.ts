@@ -7,7 +7,7 @@ export function getStripe(): Stripe {
   const { secretKey, isConfigured } = getStripeConfig();
   if (!isConfigured) {
     throw new Error(
-      "Stripe is not configured. Set STRIPE_SECRET_KEY in .env.local.",
+      "Stripe is not configured. Set NEXT_PUBLIC_STRIPE_SECRET_KEY in .env.local.",
     );
   }
 

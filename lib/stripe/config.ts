@@ -17,7 +17,7 @@ function trimEnv(value: string | undefined): string {
 
 function resolveSecretKey(): string {
   return (
-    trimEnv(process.env.STRIPE_SECRET_KEY) ||
+    trimEnv(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY) ||
     trimEnv(process.env.STRIPE_API_KEY) ||
     (process.env.NODE_ENV === "development"
       ? trimEnv(process.env.STRIPE_TEST_SECRET_KEY)
@@ -42,10 +42,12 @@ export function getStripeConfig(): StripeConfig {
   const missing: string[] = [];
   if (!secretKey) {
     missing.push(
-      "STRIPE_SECRET_KEY (sk_test_... from https://dashboard.stripe.com/test/apikeys)",
+      "NEXT_PUBLIC_STRIPE_SECRET_KEY (sk_test_... from https://dashboard.stripe.com/test/apikeys)",
     );
   } else if (!secretKey.startsWith("sk_")) {
-    missing.push("STRIPE_SECRET_KEY (must be a secret key starting with sk_)");
+    missing.push(
+      "NEXT_PUBLIC_STRIPE_SECRET_KEY (must be a secret key starting with sk_)",
+    );
   }
 
   return {
