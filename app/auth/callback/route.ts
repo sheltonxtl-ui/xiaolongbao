@@ -2,23 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { oauthFailureReasonFromDescription } from "@/lib/auth/oauth-errors";
+import { getSafeNextPath } from "@/lib/auth/client";
+import { redirectUrlFromRequest } from "@/lib/app-url";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
-
-function getRedirectOrigin(request: Request) {
-  const { origin } = new URL(request.url);
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const isLocalEnv = process.env.NODE_ENV === "development";
-
-  if (isLocalEnv) {
-    return origin;
-  }
-
-  if (forwardedHost) {
-    return `https://${forwardedHost}`;
-  }
-
-  return origin;
-}
 
 function authFailureRedirectPath(next: string): string {
   return next === "/reset-password"
@@ -29,8 +15,7 @@ function authFailureRedirectPath(next: string): string {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/decks";
-  const redirectOrigin = getRedirectOrigin(request);
+  const next = getSafeNextPath(searchParams.get("next"));
 
   const oauthError = searchParams.get("error");
   if (oauthError) {
@@ -39,12 +24,16 @@ export async function GET(request: Request) {
     if (description) {
       params.set("reason", oauthFailureReasonFromDescription(description));
     }
-    return NextResponse.redirect(`${redirectOrigin}/sign-in?${params.toString()}`);
+    return NextResponse.redirect(
+      redirectUrlFromRequest(request, `/sign-in?${params.toString()}`),
+    );
   }
 
   const { url, anonKey, isConfigured } = getSupabasePublicEnv();
   if (!isConfigured || !code) {
-    return NextResponse.redirect(`${redirectOrigin}${authFailureRedirectPath(next)}`);
+    return NextResponse.redirect(
+      redirectUrlFromRequest(request, authFailureRedirectPath(next)),
+    );
   }
 
   const cookieStore = await cookies();
@@ -68,15 +57,15 @@ export async function GET(request: Request) {
   try {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(`${redirectOrigin}${authFailureRedirectPath(next)}`);
+      return NextResponse.redirect(
+        redirectUrlFromRequest(request, authFailureRedirectPath(next)),
+      );
     }
   } catch {
-    return NextResponse.redirect(`${redirectOrigin}${authFailureRedirectPath(next)}`);
+    return NextResponse.redirect(
+      redirectUrlFromRequest(request, authFailureRedirectPath(next)),
+    );
   }
 
-  if (!next.startsWith("/")) {
-    return NextResponse.redirect(`${redirectOrigin}/decks`);
-  }
-
-  return NextResponse.redirect(`${redirectOrigin}${next}`);
+  return NextResponse.redirect(redirectUrlFromRequest(request, next));
 }

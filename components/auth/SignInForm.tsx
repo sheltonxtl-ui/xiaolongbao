@@ -10,7 +10,7 @@ import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
 import { Switch, SwitchField } from "@/components/catalyst/switch";
 import { Text, TextLink } from "@/components/catalyst/text";
-import { applyRememberMeCookies, createAuthSupabaseClient } from "@/lib/auth/client";
+import { applyRememberMeCookies, createAuthSupabaseClient, getSafeNextPath } from "@/lib/auth/client";
 import { oauthFailureMessage, type OAuthFailureReason } from "@/lib/auth/oauth-errors";
 import {
   authCallbackFailureMessage,
@@ -34,6 +34,7 @@ export function SignInForm() {
   const urlMessage = searchParams.get("message");
   const oauthReason = searchParams.get("reason") as OAuthFailureReason | null;
   const confirmedEmail = searchParams.get("email");
+  const nextPath = getSafeNextPath(searchParams.get("next"));
 
   const oauthDisplayError =
     oauthMessage ??
@@ -76,7 +77,7 @@ export function SignInForm() {
 
       applyRememberMeCookies(rememberMe);
 
-      router.push("/decks");
+      router.push(nextPath);
       router.refresh();
     } finally {
       setLoading(false);
@@ -102,7 +103,7 @@ export function SignInForm() {
         </Text>
       )}
 
-      <OAuthButtons disabled={loading} onError={setOauthMessage} />
+      <OAuthButtons disabled={loading} onError={setOauthMessage} redirectNext={nextPath} />
 
       <div className="flex items-center gap-4">
         <Divider soft className="flex-1" />

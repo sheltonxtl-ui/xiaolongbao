@@ -1,6 +1,6 @@
-import { createBrowserClient, type CookieMethodsBrowser, type CookieOptionsWithName } from "@supabase/ssr";
+import type { CookieMethodsBrowser, CookieOptionsWithName } from "@supabase/ssr";
 import type { SupabaseClient, SupabaseClientOptions } from "@supabase/supabase-js";
-import { getSupabasePublicEnv } from "./public-env";
+import { getBrowserSupabaseClient } from "./browser";
 
 type BrowserSupabaseOptions = SupabaseClientOptions<"public"> & {
   cookies?: CookieMethodsBrowser;
@@ -9,12 +9,17 @@ type BrowserSupabaseOptions = SupabaseClientOptions<"public"> & {
   isSingleton?: boolean;
 };
 
-export function createBrowserSupabaseClient(options?: BrowserSupabaseOptions): SupabaseClient {
-  const { url, anonKey, isConfigured } = getSupabasePublicEnv();
-  if (!isConfigured) {
+/** Prefer getBrowserSupabaseClient() — returns the shared singleton by default. */
+export function createBrowserSupabaseClient(
+  options?: BrowserSupabaseOptions,
+): SupabaseClient {
+  if (options?.isSingleton === false) {
     throw new Error(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) in .env.local.",
+      "Do not create extra browser Supabase clients. Use getBrowserSupabaseClient() instead.",
     );
   }
-  return createBrowserClient(url, anonKey, options);
+
+  return getBrowserSupabaseClient();
 }
+
+export { getBrowserSupabaseClient } from "./browser";

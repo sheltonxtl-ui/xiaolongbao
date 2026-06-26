@@ -13,7 +13,7 @@ import type { DeckTerm } from "@/lib/decks/types";
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string; code?: string }
-  | { status: "ready"; deckId: string; deckTitle: string; terms: DeckTerm[] };
+  | { status: "ready"; deckId: string; deckTitle: string; isPublic: boolean; terms: DeckTerm[] };
 
 export function DeckManageLoader({ deckId }: { deckId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -29,6 +29,7 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
       status: "ready",
       deckId: result.data.deck.id,
       deckTitle: result.data.deck.title,
+      isPublic: result.data.deck.isPublic,
       terms: result.data.terms,
     });
   }, [deckId]);
@@ -80,6 +81,7 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
     <DeckCardManagement
       deckId={state.deckId}
       deckTitle={state.deckTitle}
+      isPublic={state.isPublic}
       terms={state.terms}
     />
   );

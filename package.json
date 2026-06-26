@@ -5,12 +5,14 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev",
+    "dev:fresh": "npm run clean && next dev",
     "dev:webpack": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "seed:faker": "node scripts/seed-faker.mjs",
-    "seed:faker:dry": "node scripts/seed-faker.mjs --dry-run"
+    "seed:faker:dry": "node scripts/seed-faker.mjs --dry-run",
+    "db:migrate:stripe": "node scripts/apply-stripe-migration.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -30,13 +32,14 @@
     "stripe": "^22.2.2"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "4.3.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
-    "tailwindcss": "^4",
+    "postgres": "^3.4.9",
+    "tailwindcss": "4.3.1",
     "typescript": "^5"
   }
 }

@@ -17,6 +17,7 @@ export type ExploreDeck = {
   title: string;
   authorName: string;
   cardCount: number;
+  isOwnDeck: boolean;
 };
 
 export type ExploreDeckPreview = {
@@ -27,4 +28,5 @@ export type ExploreDeckPreview = {
   cardCount: number;
   previewCards: DeckTerm[];
   isSaved: boolean;
+  isOwnDeck: boolean;
 };

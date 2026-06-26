@@ -1,6 +1,10 @@
 "use server";
 
-import { createDeckWithCards, saveDeckToCollection } from "@/lib/decks/repository";
+import {
+  createDeckWithCards,
+  saveDeckToCollection,
+  updateDeckVisibility,
+} from "@/lib/decks/repository";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 
@@ -10,6 +14,10 @@ export type FinalizeDeckResult =
 
 export type SaveDeckResult =
   | { ok: true; alreadySaved: boolean }
+  | { ok: false; error: string };
+
+export type UpdateDeckVisibilityResult =
+  | { ok: true; isPublic: boolean }
   | { ok: false; error: string };
 
 export async function finalizeGeneratedDeckAction(
@@ -23,6 +31,19 @@ export async function finalizeGeneratedDeckAction(
     return { ok: false, error: result.error };
   }
   return { ok: true, deckId: result.data.deckId };
+}
+
+export async function updateDeckVisibilityAction(
+  deckId: string,
+  isPublic: boolean,
+): Promise<UpdateDeckVisibilityResult> {
+  const { isConfigured } = getSupabasePublicEnv();
+  const supabase = isConfigured ? await createServerSupabaseClient() : undefined;
+  const result = await updateDeckVisibility(deckId, isPublic, supabase);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true, isPublic: result.data.isPublic };
 }
 
 export async function saveDeckAction(deckId: string): Promise<SaveDeckResult> {

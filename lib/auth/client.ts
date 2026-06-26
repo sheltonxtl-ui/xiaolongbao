@@ -1,38 +1,10 @@
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-
-function getSiteOrigin() {
-  // Prefer the live browser origin so OAuth/password redirects stay on the
-  // current deployment (Vercel prod, preview, or localhost) instead of a
-  // baked-in NEXT_PUBLIC_SITE_URL that may still point at localhost.
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (configured) {
-    return configured;
-  }
-
-  const vercelUrl = process.env.VERCEL_URL?.replace(/\/$/, "");
-  if (vercelUrl) {
-    return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
-  }
-
-  return "";
-}
+import { resolveBrowserOrigin } from "@/lib/app-url";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 365;
 
-export function createAuthSupabaseClient(rememberMe = false) {
-  return createBrowserSupabaseClient({
-    isSingleton: false,
-    cookieOptions: {
-      path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      ...(rememberMe ? { maxAge: REMEMBER_ME_MAX_AGE } : {}),
-    },
-  });
+export function createAuthSupabaseClient(_rememberMe = false) {
+  return getBrowserSupabaseClient();
 }
 
 /** Re-apply cookie lifetime after sign-in because @supabase/ssr always uses its default maxAge. */
@@ -65,15 +37,23 @@ export function applyRememberMeCookies(rememberMe: boolean) {
 }
 
 export async function signOut() {
-  const supabase = createBrowserSupabaseClient({ isSingleton: false });
+  const supabase = getBrowserSupabaseClient();
   const { error } = await supabase.auth.signOut();
   if (error) {
     throw error;
   }
 }
 
+/** Absolute callback URL for Supabase OAuth / email links (provider APIs require absolute URLs). */
 export function getAuthCallbackUrl(next = "/decks") {
-  const origin = getSiteOrigin();
-  const safeNext = next.startsWith("/") ? next : "/decks";
-  return `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+  const safeNext = getSafeNextPath(next);
+  return `${resolveBrowserOrigin()}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+}
+
+export function getSafeNextPath(next: string | null | undefined, fallback = "/decks"): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return fallback;
+  }
+
+  return next;
 }

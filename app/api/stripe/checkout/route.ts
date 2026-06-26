@@ -4,16 +4,18 @@ import {
   stripeCheckoutErrorMessage,
   stripeConfigErrorMessage,
 } from "@/lib/stripe/config";
+import { resolveAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/stripe/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   const config = getStripeConfig();
   if (!config.isConfigured) {
     return NextResponse.json({ error: stripeConfigErrorMessage(config) }, { status: 503 });
   }
 
-  const { proPriceId, appUrl } = config;
+  const { proPriceId } = config;
+  const appUrl = resolveAppUrl(request);
 
   const supabase = await createServerSupabaseClient();
   const {
@@ -45,7 +47,7 @@ export async function POST() {
       mode: "subscription",
       line_items: [{ price: proPriceId, quantity: 1 }],
       managed_payments: { enabled: true },
-      success_url: `${appUrl}/pricing/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/billing?session_id={CHECKOUT_SESSION_ID}&checkout=success`,
       cancel_url: `${appUrl}/pricing/cancel`,
       client_reference_id: profile.id,
       customer_email: profile.email || user.email || undefined,

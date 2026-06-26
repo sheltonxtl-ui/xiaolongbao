@@ -35,6 +35,7 @@ import {
 import {
   ArrowTopRightOnSquareIcon,
   Cog6ToothIcon,
+  CreditCardIcon,
   HomeIcon,
   InboxIcon,
   MagnifyingGlassIcon,
@@ -60,6 +61,7 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
   const onDecks = pathname === "/decks" || pathname.startsWith("/decks/");
   const onExplore = pathname === "/explore" || pathname.startsWith("/explore/");
   const onGenerate = pathname === "/generate" || pathname.startsWith("/generate/");
+  const onBilling = pathname === "/billing" || pathname.startsWith("/billing/");
   const onHome = pathname === "/";
 
   const displayName = user ? getUserDisplayName(user) : "Guest";
@@ -178,6 +180,10 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
             <SidebarItem href="/pricing">
               <MegaphoneIcon {...iconProps()} />
               <SidebarLabel>Pricing</SidebarLabel>
+            </SidebarItem>
+            <SidebarItem href="/billing" current={onBilling}>
+              <CreditCardIcon {...iconProps()} />
+              <SidebarLabel>Billing</SidebarLabel>
             </SidebarItem>
             <SidebarItem href="/pricing">
               <Cog6ToothIcon {...iconProps()} />

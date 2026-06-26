@@ -95,33 +95,46 @@ export function ExploreDeckPreviewView({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Button
-            color="indigo"
-            onClick={handleSave}
-            disabled={isSaved || isPending}
-            className="!inline-flex !items-center !gap-x-2"
-          >
-            {isSaved ? (
-              <CheckIcon data-slot="icon" className="!size-4" />
-            ) : (
-              <BookmarkIcon data-slot="icon" className="!size-4" />
-            )}
-            {isPending ? "Saving…" : isSaved ? "Saved" : "Save to My Collection"}
-          </Button>
-          {saveMessage ? (
-            <Text
-              className="mt-2 text-sm text-emerald-600 dark:text-emerald-400"
-              role="status"
-              aria-live="polite"
-            >
-              {saveMessage}
-            </Text>
-          ) : null}
-          {saveError ? (
-            <Text className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-              {saveError}
-            </Text>
-          ) : null}
+          {preview.isOwnDeck ? (
+            <>
+              <Button color="indigo" href={`/decks/${preview.id}/manage`}>
+                Manage deck
+              </Button>
+              <Text className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                This is your public deck. Others can preview and save it to their collection.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Button
+                color="indigo"
+                onClick={handleSave}
+                disabled={isSaved || isPending}
+                className="!inline-flex !items-center !gap-x-2"
+              >
+                {isSaved ? (
+                  <CheckIcon data-slot="icon" className="!size-4" />
+                ) : (
+                  <BookmarkIcon data-slot="icon" className="!size-4" />
+                )}
+                {isPending ? "Saving…" : isSaved ? "Saved" : "Save to My Collection"}
+              </Button>
+              {saveMessage ? (
+                <Text
+                  className="mt-2 text-sm text-emerald-600 dark:text-emerald-400"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {saveMessage}
+                </Text>
+              ) : null}
+              {saveError ? (
+                <Text className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {saveError}
+                </Text>
+              ) : null}
+            </>
+          )}
         </div>
         <Button outline href="/explore">
           Back to explore

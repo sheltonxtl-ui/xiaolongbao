@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/catalyst/button";
 
@@ -16,6 +17,7 @@ export function UpgradeToProButton({
   className,
   disabled = false,
 }: UpgradeToProButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +35,7 @@ export function UpgradeToProButton({
 
       if (!response.ok) {
         if (response.status === 401) {
-          window.location.href = "/sign-in?next=/pricing/upgrade";
+          router.push("/sign-in?next=/pricing/upgrade");
           return;
         }
 

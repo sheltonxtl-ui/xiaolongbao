@@ -1,89 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/catalyst/button";
-import { createAuthSupabaseClient, getAuthCallbackUrl } from "@/lib/auth/client";
-import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
+import { OAUTH_PROVIDERS, type OAuthProvider } from "@/lib/auth/oauth-providers";
 import { DiscordIcon, GitHubIcon, GoogleIcon } from "./OAuthProviderIcons";
 
-export type OAuthProvider = "google" | "github" | "discord";
-
-const OAUTH_PROVIDERS: {
-  id: OAuthProvider;
-  label: string;
-  icon: typeof GoogleIcon;
-}[] = [
-  { id: "google", label: "Google", icon: GoogleIcon },
-  { id: "github", label: "GitHub", icon: GitHubIcon },
-  { id: "discord", label: "Discord", icon: DiscordIcon },
-];
+const PROVIDER_ICONS = {
+  google: GoogleIcon,
+  github: GitHubIcon,
+  discord: DiscordIcon,
+} as const;
 
 type OAuthButtonsProps = {
   redirectNext?: string;
   disabled?: boolean;
   onError?: (message: string | null) => void;
+  returnTo?: "/sign-in" | "/signup";
 };
 
 export function OAuthButtons({
   redirectNext = "/decks",
   disabled = false,
   onError,
+  returnTo = "/sign-in",
 }: OAuthButtonsProps) {
-  const { isConfigured } = getSupabasePublicEnv();
-  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
+  const router = useRouter();
 
-  async function signInWithProvider(provider: OAuthProvider) {
+  function goToConfirmPage(provider: OAuthProvider) {
     onError?.(null);
 
-    if (!isConfigured) {
-      onError?.("Supabase environment variables are missing. Add them to .env.local.");
-      return;
+    const params = new URLSearchParams({ next: redirectNext });
+    if (returnTo === "/signup") {
+      params.set("from", "signup");
     }
 
-    setLoadingProvider(provider);
-    try {
-      const supabase = createAuthSupabaseClient(true);
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: getAuthCallbackUrl(redirectNext),
-          ...(provider === "discord" ? { scopes: "identify email" } : {}),
-        },
-      });
-
-      if (error) {
-        onError?.(error.message);
-        return;
-      }
-
-      if (data.url) {
-        window.location.assign(data.url);
-        return;
-      }
-
-      onError?.("Could not start social sign-in. Check your connection and try again.");
-    } finally {
-      setLoadingProvider(null);
-    }
+    router.push(`/sign-in/oauth/${provider}?${params.toString()}`);
   }
-
-  const busy = disabled || loadingProvider !== null;
 
   return (
     <div className="grid grid-cols-1 gap-3" role="group" aria-label="Social sign in">
-      {OAUTH_PROVIDERS.map(({ id, label, icon: Icon }) => (
-        <Button
-          key={id}
-          type="button"
-          outline
-          disabled={busy}
-          onClick={() => signInWithProvider(id)}
-          className="w-full"
-        >
-          <Icon className="size-5" />
-          {loadingProvider === id ? "Redirecting…" : `Continue with ${label}`}
-        </Button>
-      ))}
+      {OAUTH_PROVIDERS.map(({ id, label }) => {
+        const Icon = PROVIDER_ICONS[id];
+
+        return (
+          <Button
+            key={id}
+            type="button"
+            outline
+            disabled={disabled}
+            onClick={() => goToConfirmPage(id)}
+            className="w-full"
+          >
+            <Icon className="size-5" />
+            {`Continue with ${label}`}
+          </Button>
+        );
+      })}
     </div>
   );
 }

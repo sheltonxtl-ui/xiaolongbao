@@ -1,17 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { PlayIcon } from "@heroicons/react/16/solid";
 import { PlusIcon } from "@heroicons/react/20/solid";
+import { updateDeckVisibilityAction } from "@/app/actions/decks";
 import {
   Alert,
   AlertActions,
   AlertDescription,
   AlertTitle,
 } from "@/components/catalyst/alert";
+import { Badge } from "@/components/catalyst/badge";
 import { Button } from "@/components/catalyst/button";
+import { Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
+import { Switch, SwitchField } from "@/components/catalyst/switch";
 import { Text } from "@/components/catalyst/text";
 import {
   DeckEmptyPanel,
@@ -45,13 +49,18 @@ function isLocalCardId(id: string): boolean {
 export function DeckCardManagement({
   deckId,
   deckTitle,
+  isPublic: initialIsPublic,
   terms,
 }: {
   deckId: string;
   deckTitle: string;
+  isPublic: boolean;
   terms: DeckTerm[];
 }) {
   const [rows, setRows] = useState<EditorRow[]>(() => termsToRows(terms));
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [visibilityError, setVisibilityError] = useState<string | null>(null);
+  const [isVisibilityPending, startVisibilityTransition] = useTransition();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -75,6 +84,25 @@ export function DeckCardManagement({
     setSaveStatus("idle");
     setSaveError(null);
   }, [terms]);
+
+  useEffect(() => {
+    setIsPublic(initialIsPublic);
+  }, [initialIsPublic]);
+
+  const handleVisibilityChange = useCallback(
+    (nextIsPublic: boolean) => {
+      setVisibilityError(null);
+      setIsPublic(nextIsPublic);
+      startVisibilityTransition(async () => {
+        const result = await updateDeckVisibilityAction(deckId, nextIsPublic);
+        if (!result.ok) {
+          setIsPublic(!nextIsPublic);
+          setVisibilityError(result.error);
+        }
+      });
+    },
+    [deckId],
+  );
 
   useEffect(() => {
     const created = objectUrls.current;
@@ -265,6 +293,29 @@ export function DeckCardManagement({
               </span>{" "}
               in this deck
             </Text>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Badge color={isPublic ? "emerald" : "zinc"}>
+                {isPublic ? "Public" : "Private"}
+              </Badge>
+              <SwitchField className="w-auto grid-cols-[auto_auto] gap-x-2">
+                <Label className="text-sm">Share in community</Label>
+                <Switch
+                  checked={isPublic}
+                  onChange={handleVisibilityChange}
+                  disabled={isVisibilityPending}
+                  color="emerald"
+                  name="deck-visibility"
+                />
+              </SwitchField>
+              {isVisibilityPending ? (
+                <Text className="text-xs text-zinc-500 dark:text-zinc-400">Updating…</Text>
+              ) : null}
+            </div>
+            {visibilityError ? (
+              <Text className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {visibilityError}
+              </Text>
+            ) : null}
             <DeckSaveStatus status={saveStatus} errorMessage={saveError} className="mt-2" />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">

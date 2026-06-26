@@ -486,6 +486,43 @@ export async function createDeckWithCards(
   return { ok: true, data: { deckId: deckRow.id } };
 }
 
+export async function updateDeckVisibility(
+  deckId: string,
+  isPublic: boolean,
+  supabaseOverride?: DbClient,
+): Promise<DeckRepoResult<{ isPublic: boolean }>> {
+  const clientResult = supabaseOverride
+    ? ({ ok: true as const, data: supabaseOverride })
+    : await getClient();
+  if (!clientResult.ok) {
+    if (clientResult.code === "NOT_CONFIGURED") {
+      return { ok: true, data: { isPublic } };
+    }
+    return clientResult;
+  }
+
+  const supabase = clientResult.data;
+  const profileResult = await getCurrentProfile(supabase);
+  if (!profileResult.ok) return profileResult;
+
+  const { data, error } = await supabase
+    .from("deck")
+    .update({ is_public: isPublic })
+    .eq("id", deckId)
+    .eq("profile_id", profileResult.data.id)
+    .select("is_public")
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error: error.message, code: "UNKNOWN" };
+  }
+  if (!data) {
+    return { ok: false, error: "Deck not found or you do not have access.", code: "NOT_FOUND" };
+  }
+
+  return { ok: true, data: { isPublic: data.is_public } };
+}
+
 export async function deleteCard(cardId: string): Promise<DeckRepoResult<null>> {
   if (isLocalCardId(cardId)) {
     return { ok: true, data: null };
@@ -520,6 +557,7 @@ export async function fetchExploreDecks(): Promise<DeckRepoResult<ExploreDeck[]>
           title: d.title,
           authorName: d.creator,
           cardCount: d.cardsInside,
+          isOwnDeck: false,
         }));
       return { ok: true, data: publicDecks };
     }
@@ -532,21 +570,26 @@ export async function fetchExploreDecks(): Promise<DeckRepoResult<ExploreDeck[]>
 
   const { data, error } = await supabase
     .from("deck")
-    .select("id, title, card ( id ), profile!deck_profile_id_fkey ( email )")
+    .select("id, title, profile_id, card ( id ), profile!deck_profile_id_fkey ( email )")
     .eq("is_public", true)
-    .neq("profile_id", profileResult.data.id)
     .order("title", { ascending: true });
 
   if (error) {
     return { ok: false, error: error.message, code: "UNKNOWN" };
   }
 
-  const decks: ExploreDeck[] = (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    authorName: authorNameFromProfile(row.profile as { email: string } | null),
-    cardCount: (row.card as { id: string }[] | null)?.length ?? 0,
-  }));
+  const decks: ExploreDeck[] = (data ?? []).map((row) => {
+    const isOwnDeck = row.profile_id === profileResult.data.id;
+    return {
+      id: row.id,
+      title: row.title,
+      authorName: isOwnDeck
+        ? "You"
+        : authorNameFromProfile(row.profile as { email: string } | null),
+      cardCount: (row.card as { id: string }[] | null)?.length ?? 0,
+      isOwnDeck,
+    };
+  });
 
   return { ok: true, data: decks };
 }
@@ -573,6 +616,7 @@ export async function fetchExploreDeckPreview(
           cardCount: terms.length,
           previewCards: terms.slice(0, previewLimit),
           isSaved: false,
+          isOwnDeck: false,
         },
       };
     }
@@ -588,7 +632,6 @@ export async function fetchExploreDeckPreview(
     .select("id, title, is_public, profile_id, card ( id ), profile!deck_profile_id_fkey ( email )")
     .eq("id", deckId)
     .eq("is_public", true)
-    .neq("profile_id", profileResult.data.id)
     .maybeSingle();
 
   if (deckError) {
@@ -597,6 +640,8 @@ export async function fetchExploreDeckPreview(
   if (!deckRow) {
     return { ok: false, error: "Public deck not found.", code: "NOT_FOUND" };
   }
+
+  const isOwnDeck = deckRow.profile_id === profileResult.data.id;
 
   const { data: cards, error: cardsError } = await supabase
     .from("card")
@@ -632,10 +677,11 @@ export async function fetchExploreDeckPreview(
       id: deckRow.id,
       title: deckRow.title,
       description: "No description provided.",
-      authorName: authorNameFromProfile(deckProfile),
+      authorName: isOwnDeck ? "You" : authorNameFromProfile(deckProfile),
       cardCount: allCards?.length ?? 0,
       previewCards: (cards ?? []).map(mapCardRow),
-      isSaved,
+      isSaved: isOwnDeck ? false : isSaved,
+      isOwnDeck,
     },
   };
 }

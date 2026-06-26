@@ -1,3 +1,5 @@
+import { resolveAppUrl } from "@/lib/app-url";
+
 export type StripeConfig = {
   secretKey: string;
   webhookSecret: string;
@@ -34,10 +36,7 @@ export function getStripeConfig(): StripeConfig {
   const isTestMode = secretKey.startsWith("sk_test_");
   const webhookSecret = trimEnv(process.env.STRIPE_WEBHOOK_SECRET);
   const proPriceId = resolveProPriceId(isTestMode);
-  const appUrl =
-    trimEnv(process.env.NEXT_PUBLIC_APP_URL) ||
-    trimEnv(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "http://localhost:3000";
+  const appUrl = resolveAppUrl();
 
   const missing: string[] = [];
   if (!secretKey) {

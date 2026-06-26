@@ -87,7 +87,7 @@ export function SignUpForm() {
         </Text>
       )}
 
-      <OAuthButtons disabled={loading} onError={setMessage} />
+      <OAuthButtons disabled={loading} onError={setMessage} returnTo="/signup" />
 
       <div className="flex items-center gap-4">
         <Divider soft className="flex-1" />
