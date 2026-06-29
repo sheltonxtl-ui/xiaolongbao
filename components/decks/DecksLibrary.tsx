@@ -44,7 +44,7 @@ function DeckStudyCard({ deck }: { deck: Deck }) {
     : deck.visibility === "Public"
       ? "emerald"
       : "zinc";
-  const manageHref = isCommunity ? `/decks/${deck.id}/study` : `/decks/${deck.id}/manage`;
+  const manageHref = `/decks/${deck.id}/manage`;
 
   return (
     <>
