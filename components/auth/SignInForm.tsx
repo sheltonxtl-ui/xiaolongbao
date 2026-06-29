@@ -8,7 +8,7 @@ import { Divider } from "@/components/catalyst/divider";
 import { Field, Fieldset, Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Input } from "@/components/catalyst/input";
-import { Switch, SwitchField } from "@/components/catalyst/switch";
+import { Checkbox, CheckboxField } from "@/components/catalyst/checkbox";
 import { Text, TextLink } from "@/components/catalyst/text";
 import { applyRememberMeCookies, createAuthSupabaseClient, getSafeNextPath } from "@/lib/auth/client";
 import { oauthFailureMessage, type OAuthFailureReason } from "@/lib/auth/oauth-errors";
@@ -140,10 +140,10 @@ export function SignInForm() {
         </Field>
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-          <SwitchField className="w-auto grid-cols-[auto_auto] gap-x-2">
+          <CheckboxField className="w-auto gap-x-2">
+            <Checkbox checked={rememberMe} onChange={setRememberMe} name="remember" />
             <Label>Remember me</Label>
-            <Switch checked={rememberMe} onChange={setRememberMe} name="remember" />
-          </SwitchField>
+          </CheckboxField>
 
           <TextLink href="/forgot-password" className="text-sm/6">
             Forgot password?

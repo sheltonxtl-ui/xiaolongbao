@@ -5,6 +5,7 @@ import {
   stripeConfigErrorMessage,
 } from "@/lib/stripe/config";
 import { resolveAppUrl } from "@/lib/app-url";
+import { getOrCreateProfileForUser } from "@/lib/profile/get-or-create-profile";
 import { getStripe } from "@/lib/stripe/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -27,11 +28,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in to upgrade to Pro." }, { status: 401 });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profile")
-    .select("id, email, plan_type, subscription_status")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { profile, error: profileError } = await getOrCreateProfileForUser(supabase, user);
 
   if (profileError || !profile) {
     return NextResponse.json({ error: "Profile not found for this account." }, { status: 404 });

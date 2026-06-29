@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from "next/link";
 import { PlayIcon } from "@heroicons/react/16/solid";
 import { PlusIcon } from "@heroicons/react/20/solid";
-import { updateDeckVisibilityAction } from "@/app/actions/decks";
+import {
+  updateDeckShareAnonymouslyAction,
+  updateDeckVisibilityAction,
+} from "@/app/actions/decks";
 import {
   Alert,
   AlertActions,
@@ -13,6 +16,7 @@ import {
 } from "@/components/catalyst/alert";
 import { Badge } from "@/components/catalyst/badge";
 import { Button } from "@/components/catalyst/button";
+import { Checkbox, CheckboxField } from "@/components/catalyst/checkbox";
 import { Label } from "@/components/catalyst/fieldset";
 import { Heading } from "@/components/catalyst/heading";
 import { Switch, SwitchField } from "@/components/catalyst/switch";
@@ -50,17 +54,21 @@ export function DeckCardManagement({
   deckId,
   deckTitle,
   isPublic: initialIsPublic,
+  shareAnonymously: initialShareAnonymously,
   terms,
 }: {
   deckId: string;
   deckTitle: string;
   isPublic: boolean;
+  shareAnonymously: boolean;
   terms: DeckTerm[];
 }) {
   const [rows, setRows] = useState<EditorRow[]>(() => termsToRows(terms));
   const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [shareAnonymously, setShareAnonymously] = useState(initialShareAnonymously);
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
   const [isVisibilityPending, startVisibilityTransition] = useTransition();
+  const [isAnonymityPending, startAnonymityTransition] = useTransition();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -89,14 +97,35 @@ export function DeckCardManagement({
     setIsPublic(initialIsPublic);
   }, [initialIsPublic]);
 
+  useEffect(() => {
+    setShareAnonymously(initialShareAnonymously);
+  }, [initialShareAnonymously]);
+
   const handleVisibilityChange = useCallback(
     (nextIsPublic: boolean) => {
       setVisibilityError(null);
       setIsPublic(nextIsPublic);
       startVisibilityTransition(async () => {
-        const result = await updateDeckVisibilityAction(deckId, nextIsPublic);
+        const result = await updateDeckVisibilityAction(deckId, nextIsPublic, shareAnonymously);
         if (!result.ok) {
           setIsPublic(!nextIsPublic);
+          setVisibilityError(result.error);
+          return;
+        }
+        setShareAnonymously(result.shareAnonymously);
+      });
+    },
+    [deckId, shareAnonymously],
+  );
+
+  const handleShareAnonymouslyChange = useCallback(
+    (nextShareAnonymously: boolean) => {
+      setVisibilityError(null);
+      setShareAnonymously(nextShareAnonymously);
+      startAnonymityTransition(async () => {
+        const result = await updateDeckShareAnonymouslyAction(deckId, nextShareAnonymously);
+        if (!result.ok) {
+          setShareAnonymously(!nextShareAnonymously);
           setVisibilityError(result.error);
         }
       });
@@ -302,12 +331,24 @@ export function DeckCardManagement({
                 <Switch
                   checked={isPublic}
                   onChange={handleVisibilityChange}
-                  disabled={isVisibilityPending}
+                  disabled={isVisibilityPending || isAnonymityPending}
                   color="emerald"
                   name="deck-visibility"
                 />
               </SwitchField>
-              {isVisibilityPending ? (
+              {isPublic ? (
+                <CheckboxField className="w-auto gap-x-2">
+                  <Checkbox
+                    checked={shareAnonymously}
+                    onChange={handleShareAnonymouslyChange}
+                    disabled={isVisibilityPending || isAnonymityPending}
+                    name="deck-share-anonymously"
+                    color="dark/zinc"
+                  />
+                  <Label className="text-sm">Share anonymously</Label>
+                </CheckboxField>
+              ) : null}
+              {isVisibilityPending || isAnonymityPending ? (
                 <Text className="text-xs text-zinc-500 dark:text-zinc-400">Updating…</Text>
               ) : null}
             </div>

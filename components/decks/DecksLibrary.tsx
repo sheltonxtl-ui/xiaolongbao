@@ -59,8 +59,8 @@ function DeckStudyCard({ deck }: { deck: Deck }) {
       <span className="min-w-0 truncate text-xs/5 text-zinc-500 dark:text-zinc-400">
         {isCommunity ? `by ${deck.creator}` : deck.creator}
       </span>
-      <Badge color={visibilityColor} className="w-fit py-px text-[0.6875rem]/4">
-        {isCommunity ? "Community Deck" : deck.visibility}
+      <Badge color={visibilityColor} className="w-fit whitespace-nowrap py-px text-[0.6875rem]/4">
+        {isCommunity ? "Community" : deck.visibility}
       </Badge>
       <span className="whitespace-nowrap tabular-nums text-xs/5 text-zinc-600 dark:text-zinc-400">
         {deck.terms} terms

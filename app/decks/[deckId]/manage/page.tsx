@@ -34,7 +34,7 @@ export default async function DeckManagePage({ params }: Props) {
         >
           study mode
         </Link>
-        , or keep editing cards above.
+        .
       </Text>
 
       <div className="mt-14">

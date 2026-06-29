@@ -7,7 +7,7 @@ import {
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
 import { ExploreDeckPreviewView } from "@/components/decks/ExploreDeckPreviewView";
-import { fetchExploreDeckPreview } from "@/lib/decks/repository";
+import { fetchExploreDeckPreviewAction } from "@/app/actions/decks";
 import type { ExploreDeckPreview } from "@/lib/decks/types";
 
 type LoadState =
@@ -20,7 +20,7 @@ export function ExploreDeckPreviewLoader({ deckId }: { deckId: string }) {
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
-    const result = await fetchExploreDeckPreview(deckId);
+    const result = await fetchExploreDeckPreviewAction(deckId);
     if (!result.ok) {
       setState({ status: "error", message: result.error, code: result.code });
       return;

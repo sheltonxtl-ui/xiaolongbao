@@ -8,7 +8,7 @@ async function main() {
 
   const sqlPath = resolve(
     process.cwd(),
-    "supabase/migrations/20260618120000_stripe_subscriptions.sql",
+    "supabase/migrations/20260618000000_community_deck_explore.sql",
   );
   const sql = readFileSync(sqlPath, "utf8");
   const databaseUrl = resolveDatabaseUrl();
@@ -18,7 +18,7 @@ async function main() {
       [
         "Missing database connection details.",
         "",
-        "Add one of these to .env.local, then rerun: npm run db:migrate:stripe",
+        "Add one of these to .env.local, then rerun: npm run db:migrate:community",
         "",
         "  SUPABASE_DB_URL=postgresql://postgres:YOUR_PASSWORD@db.hggjjklnzbuvaazpziyr.supabase.co:5432/postgres",
         "",
@@ -28,10 +28,8 @@ async function main() {
         "",
         "Find the password in Supabase Dashboard → Project Settings → Database.",
         "",
-        "Alternatively, with Supabase CLI logged in:",
-        "  npx supabase login",
-        "  npx supabase link --project-ref hggjjklnzbuvaazpziyr",
-        "  npx supabase db push --linked",
+        "Alternatively, paste supabase/migrations/20260618000000_community_deck_explore.sql",
+        "into the Supabase SQL editor and run it there.",
       ].join("\n"),
     );
     process.exit(1);
@@ -42,7 +40,7 @@ async function main() {
 
   try {
     await sqlClient.unsafe(sql);
-    console.log("Applied Stripe subscriptions migration successfully.");
+    console.log("Applied community deck explore migration successfully.");
   } finally {
     await sqlClient.end({ timeout: 5 });
   }

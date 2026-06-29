@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Deck } from "@/components/decks/DecksLibrary";
 import { mockDecks, getMockDeck, getMockDeckTerms } from "@/lib/decks-mock-data";
+import {
+  getOrCreateProfileForUser,
+  type UserProfile,
+} from "@/lib/profile/get-or-create-profile";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database.generated";
@@ -27,6 +31,12 @@ function creatorLabel(email: string): string {
   return local.replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const ANONYMOUS_AUTHOR_LABEL = "Anonymous";
+
+function communityAuthorDisplayName(email: string, shareAnonymously: boolean): string {
+  return shareAnonymously ? ANONYMOUS_AUTHOR_LABEL : creatorLabel(email);
+}
+
 function topicFromTitle(title: string): string {
   const beforeColon = title.split(":")[0]?.trim();
   return beforeColon && beforeColon.length < 48 ? beforeColon : "General";
@@ -45,6 +55,71 @@ function isMissingSchemaError(error: { message?: string; code?: string }): boole
 function authorNameFromProfile(profile: { email: string } | null | undefined): string {
   if (!profile?.email) return "Anonymous";
   return creatorLabel(profile.email);
+}
+
+type PublicDeckExploreRow = {
+  id: string;
+  title: string;
+  profile_id: string;
+  author_name?: string;
+  description?: string;
+  card: { id: string }[] | null;
+};
+
+async function getOptionalCurrentProfile(
+  supabase: DbClient,
+): Promise<UserProfile | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { profile } = await getOrCreateProfileForUser(supabase, user);
+  return profile;
+}
+
+function exploreAuthorName(
+  row: Pick<PublicDeckExploreRow, "author_name">,
+  isOwnDeck: boolean,
+): string {
+  if (isOwnDeck) return "You";
+  const storedAuthor = row.author_name?.trim();
+  if (storedAuthor) return storedAuthor;
+  return "Anonymous";
+}
+
+async function fetchPublicDeckExploreRows(
+  supabase: DbClient,
+): Promise<{ rows: PublicDeckExploreRow[] | null; error: string | null }> {
+  const extendedSelect =
+    "id, title, profile_id, author_name, description, card ( id )";
+  const basicSelect = "id, title, profile_id, card ( id )";
+
+  const extendedResult = await supabase
+    .from("deck")
+    .select(extendedSelect)
+    .eq("is_public", true)
+    .order("title", { ascending: true });
+
+  if (extendedResult.error && isMissingSchemaError(extendedResult.error)) {
+    const basicResult = await supabase
+      .from("deck")
+      .select(basicSelect)
+      .eq("is_public", true)
+      .order("title", { ascending: true });
+
+    if (basicResult.error) {
+      return { rows: null, error: basicResult.error.message };
+    }
+
+    return { rows: (basicResult.data ?? []) as PublicDeckExploreRow[], error: null };
+  }
+
+  if (extendedResult.error) {
+    return { rows: null, error: extendedResult.error.message };
+  }
+
+  return { rows: (extendedResult.data ?? []) as PublicDeckExploreRow[], error: null };
 }
 
 function mapDeckRow(
@@ -126,21 +201,17 @@ async function getCurrentProfile(
     };
   }
 
-  const { data: profile, error } = await supabase
-    .from("profile")
-    .select("id, email")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { profile, error } = await getOrCreateProfileForUser(supabase, user);
 
   if (error || !profile) {
     return {
       ok: false,
-      error: error?.message ?? "Profile not found for this account.",
+      error: error ?? "Profile not found for this account.",
       code: "UNKNOWN",
     };
   }
 
-  return { ok: true, data: profile };
+  return { ok: true, data: { id: profile.id, email: profile.email } };
 }
 
 export async function fetchUserDecks(): Promise<DeckRepoResult<Deck[]>> {
@@ -169,7 +240,7 @@ export async function fetchUserDecks(): Promise<DeckRepoResult<Deck[]>> {
   const { data: savedRows, error: savedError } = await supabase
     .from("saved_deck")
     .select(
-      "deck_id, deck:deck_id ( id, title, is_public, card ( id ), profile!deck_profile_id_fkey ( email ) )",
+      "deck_id, deck:deck_id ( id, title, is_public, author_name, card ( id ), profile!deck_profile_id_fkey ( email ) )",
     )
     .eq("user_id", profileResult.data.id);
 
@@ -203,16 +274,20 @@ export async function fetchUserDecks(): Promise<DeckRepoResult<Deck[]>> {
         id: string;
         title: string;
         is_public: boolean;
+        author_name?: string;
         card: { id: string }[] | null;
         profile: { email: string } | null;
       };
+      const storedAuthor = deck.author_name?.trim();
       return mapDeckRow(
         deck,
         profileResult.data.email,
         ownedDecks.length + index,
         {
           isCommunityDeck: true,
-          authorName: authorNameFromProfile(deck.profile),
+          authorName:
+            storedAuthor ||
+            authorNameFromProfile(deck.profile),
         },
       );
     });
@@ -233,7 +308,13 @@ export async function fetchDeckDetail(deckId: string): Promise<
       return {
         ok: true,
         data: {
-          deck: { id: mock.id, title: mock.title, isPublic: mock.visibility === "Public" },
+          deck: {
+            id: mock.id,
+            title: mock.title,
+            isPublic: mock.visibility === "Public",
+            canEdit: true,
+            shareAnonymously: false,
+          },
           terms: getMockDeckTerms(deckId),
         },
       };
@@ -247,7 +328,9 @@ export async function fetchDeckDetail(deckId: string): Promise<
 
   const { data: deckRow, error: deckError } = await supabase
     .from("deck")
-    .select("id, title, is_public, profile_id, profile!deck_profile_id_fkey ( email )")
+    .select(
+      "id, title, is_public, profile_id, author_name, share_anonymously, profile!deck_profile_id_fkey ( email )",
+    )
     .eq("id", deckId)
     .maybeSingle();
 
@@ -287,6 +370,10 @@ export async function fetchDeckDetail(deckId: string): Promise<
   }
 
   const deckProfile = deckRow.profile as { email: string } | null;
+  const shareAnonymously =
+    "share_anonymously" in deckRow && typeof deckRow.share_anonymously === "boolean"
+      ? deckRow.share_anonymously
+      : deckRow.author_name?.trim() === ANONYMOUS_AUTHOR_LABEL;
 
   return {
     ok: true,
@@ -295,6 +382,8 @@ export async function fetchDeckDetail(deckId: string): Promise<
         id: deckRow.id,
         title: deckRow.title,
         isPublic: deckRow.is_public,
+        canEdit: isOwner,
+        shareAnonymously,
         authorName: authorNameFromProfile(deckProfile),
       },
       terms: (cards ?? []).map(mapCardRow),
@@ -489,14 +578,15 @@ export async function createDeckWithCards(
 export async function updateDeckVisibility(
   deckId: string,
   isPublic: boolean,
+  shareAnonymously = false,
   supabaseOverride?: DbClient,
-): Promise<DeckRepoResult<{ isPublic: boolean }>> {
+): Promise<DeckRepoResult<{ isPublic: boolean; shareAnonymously: boolean }>> {
   const clientResult = supabaseOverride
     ? ({ ok: true as const, data: supabaseOverride })
     : await getClient();
   if (!clientResult.ok) {
     if (clientResult.code === "NOT_CONFIGURED") {
-      return { ok: true, data: { isPublic } };
+      return { ok: true, data: { isPublic, shareAnonymously } };
     }
     return clientResult;
   }
@@ -505,13 +595,40 @@ export async function updateDeckVisibility(
   const profileResult = await getCurrentProfile(supabase);
   if (!profileResult.ok) return profileResult;
 
-  const { data, error } = await supabase
+  const authorName = communityAuthorDisplayName(profileResult.data.email, shareAnonymously);
+  const extendedUpdate = {
+    is_public: isPublic,
+    author_id: profileResult.data.id,
+    author_name: authorName,
+    share_anonymously: shareAnonymously,
+  };
+  const basicUpdate = { is_public: isPublic };
+
+  let data: { is_public: boolean; share_anonymously?: boolean } | null = null;
+  let error: { message: string } | null = null;
+
+  const extendedResult = await supabase
     .from("deck")
-    .update({ is_public: isPublic })
+    .update(extendedUpdate)
     .eq("id", deckId)
     .eq("profile_id", profileResult.data.id)
-    .select("is_public")
+    .select("is_public, share_anonymously")
     .maybeSingle();
+
+  if (extendedResult.error && isMissingSchemaError(extendedResult.error)) {
+    const basicResult = await supabase
+      .from("deck")
+      .update(basicUpdate)
+      .eq("id", deckId)
+      .eq("profile_id", profileResult.data.id)
+      .select("is_public")
+      .maybeSingle();
+    data = basicResult.data;
+    error = basicResult.error;
+  } else {
+    data = extendedResult.data;
+    error = extendedResult.error;
+  }
 
   if (error) {
     return { ok: false, error: error.message, code: "UNKNOWN" };
@@ -520,7 +637,83 @@ export async function updateDeckVisibility(
     return { ok: false, error: "Deck not found or you do not have access.", code: "NOT_FOUND" };
   }
 
-  return { ok: true, data: { isPublic: data.is_public } };
+  return {
+    ok: true,
+    data: {
+      isPublic: data.is_public,
+      shareAnonymously: data.share_anonymously ?? shareAnonymously,
+    },
+  };
+}
+
+export async function updateDeckShareAnonymously(
+  deckId: string,
+  shareAnonymously: boolean,
+  supabaseOverride?: DbClient,
+): Promise<DeckRepoResult<{ shareAnonymously: boolean }>> {
+  const clientResult = supabaseOverride
+    ? ({ ok: true as const, data: supabaseOverride })
+    : await getClient();
+  if (!clientResult.ok) {
+    if (clientResult.code === "NOT_CONFIGURED") {
+      return { ok: true, data: { shareAnonymously } };
+    }
+    return clientResult;
+  }
+
+  const supabase = clientResult.data;
+  const profileResult = await getCurrentProfile(supabase);
+  if (!profileResult.ok) return profileResult;
+
+  const authorName = communityAuthorDisplayName(profileResult.data.email, shareAnonymously);
+  const extendedUpdate = {
+    share_anonymously: shareAnonymously,
+    author_name: authorName,
+    author_id: profileResult.data.id,
+  };
+
+  const { data, error } = await supabase
+    .from("deck")
+    .update(extendedUpdate)
+    .eq("id", deckId)
+    .eq("profile_id", profileResult.data.id)
+    .eq("is_public", true)
+    .select("share_anonymously")
+    .maybeSingle();
+
+  if (error && isMissingSchemaError(error)) {
+    const fallback = await supabase
+      .from("deck")
+      .update({ author_name: authorName })
+      .eq("id", deckId)
+      .eq("profile_id", profileResult.data.id)
+      .eq("is_public", true)
+      .select("id")
+      .maybeSingle();
+
+    if (fallback.error || !fallback.data) {
+      return {
+        ok: false,
+        error: fallback.error?.message ?? "Deck not found or you do not have access.",
+        code: "NOT_FOUND",
+      };
+    }
+
+    return { ok: true, data: { shareAnonymously } };
+  }
+
+  if (error) {
+    return { ok: false, error: error.message, code: "UNKNOWN" };
+  }
+  if (!data) {
+    return {
+      ok: false,
+      error: "Deck not found, is not public, or you do not have access.",
+      code: "NOT_FOUND",
+    };
+  }
+
+  return { ok: true, data: { shareAnonymously: data.share_anonymously } };
 }
 
 export async function deleteCard(cardId: string): Promise<DeckRepoResult<null>> {
@@ -565,28 +758,21 @@ export async function fetchExploreDecks(): Promise<DeckRepoResult<ExploreDeck[]>
   }
 
   const supabase = clientResult.data;
-  const profileResult = await getCurrentProfile(supabase);
-  if (!profileResult.ok) return profileResult;
-
-  const { data, error } = await supabase
-    .from("deck")
-    .select("id, title, profile_id, card ( id ), profile!deck_profile_id_fkey ( email )")
-    .eq("is_public", true)
-    .order("title", { ascending: true });
+  const currentProfile = await getOptionalCurrentProfile(supabase);
+  const currentProfileId = currentProfile?.id ?? null;
+  const { rows, error } = await fetchPublicDeckExploreRows(supabase);
 
   if (error) {
-    return { ok: false, error: error.message, code: "UNKNOWN" };
+    return { ok: false, error, code: "UNKNOWN" };
   }
 
-  const decks: ExploreDeck[] = (data ?? []).map((row) => {
-    const isOwnDeck = row.profile_id === profileResult.data.id;
+  const decks: ExploreDeck[] = (rows ?? []).map((row) => {
+    const isOwnDeck = currentProfileId ? row.profile_id === currentProfileId : false;
     return {
       id: row.id,
       title: row.title,
-      authorName: isOwnDeck
-        ? "You"
-        : authorNameFromProfile(row.profile as { email: string } | null),
-      cardCount: (row.card as { id: string }[] | null)?.length ?? 0,
+      authorName: exploreAuthorName(row, isOwnDeck),
+      cardCount: row.card?.length ?? 0,
       isOwnDeck,
     };
   });
@@ -624,15 +810,36 @@ export async function fetchExploreDeckPreview(
   }
 
   const supabase = clientResult.data;
-  const profileResult = await getCurrentProfile(supabase);
-  if (!profileResult.ok) return profileResult;
+  const currentProfile = await getOptionalCurrentProfile(supabase);
+  const currentProfileId = currentProfile?.id ?? null;
 
-  const { data: deckRow, error: deckError } = await supabase
+  const extendedSelect =
+    "id, title, is_public, profile_id, author_name, description, card ( id )";
+  const basicSelect = "id, title, is_public, profile_id, card ( id )";
+
+  let deckRow: PublicDeckExploreRow | null = null;
+  let deckError: { message: string } | null = null;
+
+  const extendedResult = await supabase
     .from("deck")
-    .select("id, title, is_public, profile_id, card ( id ), profile!deck_profile_id_fkey ( email )")
+    .select(extendedSelect)
     .eq("id", deckId)
     .eq("is_public", true)
     .maybeSingle();
+
+  if (extendedResult.error && isMissingSchemaError(extendedResult.error)) {
+    const basicResult = await supabase
+      .from("deck")
+      .select(basicSelect)
+      .eq("id", deckId)
+      .eq("is_public", true)
+      .maybeSingle();
+    deckRow = (basicResult.data ?? null) as PublicDeckExploreRow | null;
+    deckError = basicResult.error;
+  } else {
+    deckRow = (extendedResult.data ?? null) as PublicDeckExploreRow | null;
+    deckError = extendedResult.error;
+  }
 
   if (deckError) {
     return { ok: false, error: deckError.message, code: "UNKNOWN" };
@@ -641,7 +848,7 @@ export async function fetchExploreDeckPreview(
     return { ok: false, error: "Public deck not found.", code: "NOT_FOUND" };
   }
 
-  const isOwnDeck = deckRow.profile_id === profileResult.data.id;
+  const isOwnDeck = currentProfileId ? deckRow.profile_id === currentProfileId : false;
 
   const { data: cards, error: cardsError } = await supabase
     .from("card")
@@ -655,30 +862,29 @@ export async function fetchExploreDeckPreview(
   }
 
   let isSaved = false;
-  const { data: savedRow, error: savedLookupError } = await supabase
-    .from("saved_deck")
-    .select("id")
-    .eq("user_id", profileResult.data.id)
-    .eq("deck_id", deckId)
-    .maybeSingle();
+  if (currentProfileId) {
+    const { data: savedRow, error: savedLookupError } = await supabase
+      .from("saved_deck")
+      .select("id")
+      .eq("user_id", currentProfileId)
+      .eq("deck_id", deckId)
+      .maybeSingle();
 
-  if (savedLookupError && !isMissingSchemaError(savedLookupError)) {
-    return { ok: false, error: savedLookupError.message, code: "UNKNOWN" };
+    if (savedLookupError && !isMissingSchemaError(savedLookupError)) {
+      return { ok: false, error: savedLookupError.message, code: "UNKNOWN" };
+    }
+
+    isSaved = Boolean(savedRow);
   }
-
-  isSaved = Boolean(savedRow);
-
-  const allCards = deckRow.card as { id: string }[] | null;
-  const deckProfile = deckRow.profile as { email: string } | null;
 
   return {
     ok: true,
     data: {
       id: deckRow.id,
       title: deckRow.title,
-      description: "No description provided.",
-      authorName: isOwnDeck ? "You" : authorNameFromProfile(deckProfile),
-      cardCount: allCards?.length ?? 0,
+      description: deckRow.description?.trim() || "No description provided.",
+      authorName: exploreAuthorName(deckRow, isOwnDeck),
+      cardCount: deckRow.card?.length ?? 0,
       previewCards: (cards ?? []).map(mapCardRow),
       isSaved: isOwnDeck ? false : isSaved,
       isOwnDeck,

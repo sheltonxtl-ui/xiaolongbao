@@ -8,7 +8,7 @@ async function main() {
 
   const sqlPath = resolve(
     process.cwd(),
-    "supabase/migrations/20260618120000_stripe_subscriptions.sql",
+    "supabase/migrations/20260628130000_drop_profile_public_deck_authors_policy.sql",
   );
   const sql = readFileSync(sqlPath, "utf8");
   const databaseUrl = resolveDatabaseUrl();
@@ -18,20 +18,12 @@ async function main() {
       [
         "Missing database connection details.",
         "",
-        "Add one of these to .env.local, then rerun: npm run db:migrate:stripe",
+        "Run this SQL in Supabase Dashboard → SQL editor:",
         "",
-        "  SUPABASE_DB_URL=postgresql://postgres:YOUR_PASSWORD@db.hggjjklnzbuvaazpziyr.supabase.co:5432/postgres",
+        "  DROP POLICY IF EXISTS profile_select_public_deck_authors ON public.profile;",
         "",
-        "or",
-        "",
-        "  SUPABASE_DB_PASSWORD=YOUR_PASSWORD",
-        "",
-        "Find the password in Supabase Dashboard → Project Settings → Database.",
-        "",
-        "Alternatively, with Supabase CLI logged in:",
-        "  npx supabase login",
-        "  npx supabase link --project-ref hggjjklnzbuvaazpziyr",
-        "  npx supabase db push --linked",
+        "Or add SUPABASE_DB_PASSWORD to .env.local and rerun:",
+        "  npm run db:migrate:fix-profile-rls",
       ].join("\n"),
     );
     process.exit(1);
@@ -42,7 +34,7 @@ async function main() {
 
   try {
     await sqlClient.unsafe(sql);
-    console.log("Applied Stripe subscriptions migration successfully.");
+    console.log("Dropped recursive profile RLS policy successfully.");
   } finally {
     await sqlClient.end({ timeout: 5 });
   }

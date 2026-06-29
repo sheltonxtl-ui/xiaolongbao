@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { oauthFailureReasonFromDescription } from "@/lib/auth/oauth-errors";
 import { getSafeNextPath } from "@/lib/auth/client";
 import { redirectUrlFromRequest } from "@/lib/app-url";
+import { getOrCreateProfileForUser } from "@/lib/profile/get-or-create-profile";
 import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 
 function authFailureRedirectPath(next: string): string {
@@ -60,6 +61,13 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         redirectUrlFromRequest(request, authFailureRedirectPath(next)),
       );
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await getOrCreateProfileForUser(supabase, user);
     }
   } catch {
     return NextResponse.redirect(

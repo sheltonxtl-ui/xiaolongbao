@@ -164,9 +164,15 @@ CREATE POLICY card_select_public_or_own
     EXISTS (
       SELECT 1
       FROM public.deck d
+      WHERE d.id = card.deck_id
+        AND d.is_public = true
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM public.deck d
       JOIN public.profile p ON p.id = d.profile_id
       WHERE d.id = card.deck_id
-        AND (d.is_public = true OR p.user_id = auth.uid())
+        AND p.user_id = auth.uid()
     )
     OR EXISTS (
       SELECT 1

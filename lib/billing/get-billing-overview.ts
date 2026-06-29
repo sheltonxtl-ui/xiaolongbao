@@ -5,6 +5,7 @@ import {
   syncCheckoutSessionForProfile,
 } from "@/lib/billing/sync-checkout-session";
 import { getSubscriptionPeriodEndIso } from "@/lib/billing/stripe-subscription";
+import { getOrCreateProfileForUser } from "@/lib/profile/get-or-create-profile";
 import { getStripeConfig } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -64,13 +65,9 @@ export async function getBillingOverviewForCurrentUser(options?: {
     return null;
   }
 
-  const { data: profile } = await supabase
-    .from("profile")
-    .select("id, email, plan_type, subscription_status, billing_period")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { profile, error: profileError } = await getOrCreateProfileForUser(supabase, user);
 
-  if (!profile) {
+  if (profileError || !profile) {
     return null;
   }
 

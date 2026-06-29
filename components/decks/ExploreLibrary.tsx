@@ -143,9 +143,9 @@ export function ExploreLibrary({ decks }: { decks: ExploreDeck[] }) {
                 to share it here.
               </>
             ) : ownerFilter === "others" ? (
-              "No one else has shared a public deck yet. Check back later."
+              "No one else has shared a public deck yet. Browse Explore to preview decks from other learners."
             ) : (
-              "No public decks have been shared yet. Check back later."
+              "No public decks have been shared yet. Browse Explore to see community decks."
             )
           }
           actions={

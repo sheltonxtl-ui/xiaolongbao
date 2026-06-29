@@ -8,6 +8,8 @@ export type DeckDetail = {
   id: string;
   title: string;
   isPublic: boolean;
+  canEdit: boolean;
+  shareAnonymously: boolean;
   description?: string;
   authorName?: string;
 };

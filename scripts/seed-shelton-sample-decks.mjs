@@ -8,11 +8,15 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { loadEnvFile, resolveSupabaseAdminClient } from "./lib/load-env.mjs";
+import {
+  ensureAuthUser,
+  ensureProfile,
+  resolveDevPassword,
+} from "./lib/ensure-auth-user.mjs";
 
 const EMAIL = process.env.SEED_USER_EMAIL ?? "shelton.xtl@gmail.com";
-const PASSWORD = process.env.SEED_USER_PASSWORD;
+const PASSWORD = process.env.SEED_USER_PASSWORD?.trim() || resolveDevPassword();
 
 const SAMPLE_DECKS = [
   {
@@ -65,86 +69,6 @@ const SAMPLE_DECKS = [
     ],
   },
 ];
-
-function loadEnvLocal() {
-  const path = resolve(process.cwd(), ".env.local");
-  if (!existsSync(path)) return;
-  const text = readFileSync(path, "utf8");
-  for (const line of text.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (!(key in process.env)) process.env[key] = value;
-  }
-}
-
-async function findAuthUserByEmail(supabase, email) {
-  let page = 1;
-  const perPage = 200;
-  while (true) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
-    if (error) throw error;
-    const match = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (match) return match;
-    if (data.users.length < perPage) break;
-    page += 1;
-  }
-  return null;
-}
-
-async function ensureAuthUser(supabase, email, password) {
-  let authUser = await findAuthUserByEmail(supabase, email);
-
-  if (!authUser) {
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (error) throw new Error(`createUser: ${error.message}`);
-    authUser = data.user;
-    console.log(`Created auth user for ${email}`);
-  } else {
-    const { error } = await supabase.auth.admin.updateUserById(authUser.id, {
-      password,
-      email_confirm: true,
-    });
-    if (error) throw new Error(`updateUser password: ${error.message}`);
-    console.log(`Updated password for existing user ${email}`);
-  }
-
-  return authUser;
-}
-
-async function ensureProfile(supabase, authUserId, email) {
-  const { data: existing, error: selectError } = await supabase
-    .from("profile")
-    .select("id, user_id, email")
-    .eq("user_id", authUserId)
-    .maybeSingle();
-
-  if (selectError) throw new Error(`profile select: ${selectError.message}`);
-  if (existing) return existing;
-
-  const { data: created, error: insertError } = await supabase
-    .from("profile")
-    .insert({ user_id: authUserId, email })
-    .select("id, user_id, email")
-    .single();
-
-  if (insertError) throw new Error(`profile insert: ${insertError.message}`);
-  console.log(`Created profile for ${email}`);
-  return created;
-}
 
 async function seedDecks(supabase, profileId) {
   const results = [];
@@ -209,20 +133,14 @@ async function seedDecks(supabase, profileId) {
 }
 
 async function run() {
-  loadEnvLocal();
+  loadEnvFile();
 
-  if (!PASSWORD) {
-    throw new Error("Set SEED_USER_PASSWORD in the environment (do not commit it).");
+  const adminConfig = resolveSupabaseAdminClient();
+  if (!adminConfig) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local");
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local");
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  const supabase = createClient(adminConfig.supabaseUrl, adminConfig.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 

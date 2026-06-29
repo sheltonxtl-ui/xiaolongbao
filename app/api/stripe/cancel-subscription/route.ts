@@ -3,6 +3,7 @@ import { isActiveSubscription } from "@/lib/billing/plans";
 import { resolveActiveStripeSubscriptionForProfile } from "@/lib/billing/resolve-stripe-subscription";
 import { activateProSubscription } from "@/lib/billing/sync-subscription";
 import { getSubscriptionPeriodEndIso } from "@/lib/billing/stripe-subscription";
+import { getOrCreateProfileForUser } from "@/lib/profile/get-or-create-profile";
 import { getStripeConfig, stripeConfigErrorMessage } from "@/lib/stripe/config";
 import { getStripe } from "@/lib/stripe/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -23,11 +24,7 @@ export async function POST() {
     return NextResponse.json({ error: "Sign in to manage billing." }, { status: 401 });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profile")
-    .select("id, email, subscription_status")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { profile, error: profileError } = await getOrCreateProfileForUser(supabase, user);
 
   if (profileError || !profile) {
     return NextResponse.json({ error: "Profile not found for this account." }, { status: 404 });

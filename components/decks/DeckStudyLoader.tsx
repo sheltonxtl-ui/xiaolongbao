@@ -7,7 +7,7 @@ import {
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
 import { DeckStudyMode } from "@/components/decks/DeckStudyMode";
-import { fetchDeckDetail } from "@/lib/decks/repository";
+import { fetchDeckStudyAction } from "@/app/actions/decks";
 import type { DeckTerm } from "@/lib/decks/types";
 
 type LoadState =
@@ -20,15 +20,15 @@ export function DeckStudyLoader({ deckId }: { deckId: string }) {
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
-    const result = await fetchDeckDetail(deckId);
+    const result = await fetchDeckStudyAction(deckId);
     if (!result.ok) {
       setState({ status: "error", message: result.error, code: result.code });
       return;
     }
     setState({
       status: "ready",
-      deckId: result.data.deck.id,
-      deckTitle: result.data.deck.title,
+      deckId: result.data.deckId,
+      deckTitle: result.data.deckTitle,
       terms: result.data.terms,
     });
   }, [deckId]);

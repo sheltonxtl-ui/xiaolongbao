@@ -54,6 +54,7 @@ export type Database = {
           id: string
           is_public: boolean
           profile_id: string
+          share_anonymously: boolean
           title: string
         }
         Insert: {
@@ -63,6 +64,7 @@ export type Database = {
           id?: string
           is_public?: boolean
           profile_id: string
+          share_anonymously?: boolean
           title: string
         }
         Update: {
@@ -72,6 +74,7 @@ export type Database = {
           id?: string
           is_public?: boolean
           profile_id?: string
+          share_anonymously?: boolean
           title?: string
         }
         Relationships: [

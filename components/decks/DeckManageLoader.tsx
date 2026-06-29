@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/catalyst/button";
 import {
+  DeckEmptyPanel,
   DeckErrorPanel,
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
@@ -13,7 +14,15 @@ import type { DeckTerm } from "@/lib/decks/types";
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string; code?: string }
-  | { status: "ready"; deckId: string; deckTitle: string; isPublic: boolean; terms: DeckTerm[] };
+  | {
+      status: "ready";
+      deckId: string;
+      deckTitle: string;
+      isPublic: boolean;
+      shareAnonymously: boolean;
+      canEdit: boolean;
+      terms: DeckTerm[];
+    };
 
 export function DeckManageLoader({ deckId }: { deckId: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -30,6 +39,8 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
       deckId: result.data.deck.id,
       deckTitle: result.data.deck.title,
       isPublic: result.data.deck.isPublic,
+      shareAnonymously: result.data.deck.shareAnonymously,
+      canEdit: result.data.deck.canEdit,
       terms: result.data.terms,
     });
   }, [deckId]);
@@ -77,11 +88,33 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
     );
   }
 
+  if (state.status === "ready" && !state.canEdit) {
+    return (
+      <DeckEmptyPanel
+        className="mt-4"
+        headingId="deck-community-readonly-heading"
+        title="Community deck"
+        description="This deck was shared by another learner. You can study it, but only the author can edit cards or change sharing settings."
+        actions={
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button color="indigo" href={`/decks/${state.deckId}/study`}>
+              Study deck
+            </Button>
+            <Button outline href="/decks">
+              Back to decks
+            </Button>
+          </div>
+        }
+      />
+    );
+  }
+
   return (
     <DeckCardManagement
       deckId={state.deckId}
       deckTitle={state.deckTitle}
       isPublic={state.isPublic}
+      shareAnonymously={state.shareAnonymously}
       terms={state.terms}
     />
   );

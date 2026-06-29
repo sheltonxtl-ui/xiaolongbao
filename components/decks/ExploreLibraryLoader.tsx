@@ -7,7 +7,8 @@ import {
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
 import { ExploreLibrary } from "@/components/decks/ExploreLibrary";
-import { fetchExploreDecks } from "@/lib/decks/repository";
+import { fetchExploreDecksAction } from "@/app/actions/decks";
+import { useAuthUser } from "@/lib/hooks/useAuthUser";
 import type { ExploreDeck } from "@/lib/decks/types";
 
 type LoadState =
@@ -16,11 +17,12 @@ type LoadState =
   | { status: "ready"; decks: ExploreDeck[] };
 
 export function ExploreLibraryLoader() {
+  const { loading: authLoading } = useAuthUser();
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
-    const result = await fetchExploreDecks();
+    const result = await fetchExploreDecksAction();
     if (!result.ok) {
       setState({ status: "error", message: result.error, code: result.code });
       return;
@@ -29,10 +31,11 @@ export function ExploreLibraryLoader() {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
     void load();
-  }, [load]);
+  }, [authLoading, load]);
 
-  if (state.status === "loading") {
+  if (authLoading || state.status === "loading") {
     return (
       <DeckLoadingPanel
         headingId="explore-loading-heading"
