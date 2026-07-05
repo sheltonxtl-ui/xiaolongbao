@@ -8,6 +8,7 @@ import {
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
 import { DeckCardManagement } from "@/components/decks/DeckCardManagement";
+import { CommunityDeckManagePanel } from "@/components/decks/CommunityDeckManagePanel";
 import { fetchDeckDetail } from "@/lib/decks/repository";
 import type { DeckTerm } from "@/lib/decks/types";
 
@@ -21,6 +22,9 @@ type LoadState =
       isPublic: boolean;
       shareAnonymously: boolean;
       canEdit: boolean;
+      canDelete: boolean;
+      canUnsave: boolean;
+      isSystemDeck: boolean;
       terms: DeckTerm[];
     };
 
@@ -41,6 +45,9 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
       isPublic: result.data.deck.isPublic,
       shareAnonymously: result.data.deck.shareAnonymously,
       canEdit: result.data.deck.canEdit,
+      canDelete: result.data.deck.canDelete,
+      canUnsave: result.data.deck.canUnsave,
+      isSystemDeck: result.data.deck.isSystemDeck,
       terms: result.data.terms,
     });
   }, [deckId]);
@@ -96,14 +103,7 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
         title="Community deck"
         description="This deck was shared by another learner. You can study it, but only the author can edit cards or change sharing settings."
         actions={
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Button color="indigo" href={`/decks/${state.deckId}/study`}>
-              Study deck
-            </Button>
-            <Button outline href="/decks">
-              Back to decks
-            </Button>
-          </div>
+          <CommunityDeckManagePanel deckId={state.deckId} deckTitle={state.deckTitle} />
         }
       />
     );
@@ -115,6 +115,7 @@ export function DeckManageLoader({ deckId }: { deckId: string }) {
       deckTitle={state.deckTitle}
       isPublic={state.isPublic}
       shareAnonymously={state.shareAnonymously}
+      canDelete={state.canDelete}
       terms={state.terms}
     />
   );

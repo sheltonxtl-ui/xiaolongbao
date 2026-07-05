@@ -9,11 +9,13 @@ import { getSupabasePublicEnv } from "@/lib/supabase/public-env";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database.generated";
 import type { ExploreDeck, ExploreDeckPreview, DeckDetail, DeckTerm } from "./types";
+import { canDeleteDeck, canUnsaveCommunityDeck } from "./constants";
 
 export type DeckRepoErrorCode =
   | "NOT_CONFIGURED"
   | "NOT_AUTHENTICATED"
   | "NOT_FOUND"
+  | "FORBIDDEN"
   | "UNKNOWN";
 
 export type DeckRepoResult<T> =
@@ -127,6 +129,7 @@ function mapDeckRow(
     id: string;
     title: string;
     is_public: boolean;
+    is_system_deck?: boolean;
     author_name?: string;
     card: { id: string }[] | null;
   },
@@ -138,6 +141,8 @@ function mapDeckRow(
   const authorLabel = options?.isCommunityDeck
     ? (options.authorName ?? row.author_name ?? "Unknown")
     : creatorLabel(profileEmail);
+  const isSystemDeck = row.is_system_deck === true;
+  const isCommunityDeck = options?.isCommunityDeck ?? false;
   return {
     id: row.id,
     title: row.title,
@@ -149,7 +154,10 @@ function mapDeckRow(
     updatedRank: index,
     visibility: row.is_public ? "Public" : "Private",
     mastery: 0,
-    isCommunityDeck: options?.isCommunityDeck ?? false,
+    isCommunityDeck,
+    isSystemDeck,
+    canDelete: canDeleteDeck({ isCommunityDeck, isSystemDeck }),
+    canUnsave: canUnsaveCommunityDeck({ isCommunityDeck }),
   };
 }
 
@@ -229,9 +237,36 @@ export async function fetchUserDecks(): Promise<DeckRepoResult<Deck[]>> {
 
   const { data: ownedRows, error: ownedError } = await supabase
     .from("deck")
-    .select("id, title, is_public, card ( id )")
+    .select("id, title, is_public, is_system_deck, card ( id )")
     .eq("profile_id", profileResult.data.id)
     .order("title", { ascending: true });
+
+  if (ownedError && isMissingSchemaError(ownedError)) {
+    const fallback = await supabase
+      .from("deck")
+      .select("id, title, is_public, card ( id )")
+      .eq("profile_id", profileResult.data.id)
+      .order("title", { ascending: true });
+
+    if (fallback.error) {
+      return { ok: false, error: fallback.error.message, code: "UNKNOWN" };
+    }
+
+    const ownedDecks = (fallback.data ?? []).map((row, index) =>
+      mapDeckRow(
+        {
+          id: row.id,
+          title: row.title,
+          is_public: row.is_public,
+          card: row.card as { id: string }[] | null,
+        },
+        profileResult.data.email,
+        index,
+      ),
+    );
+
+    return { ok: true, data: ownedDecks };
+  }
 
   if (ownedError) {
     return { ok: false, error: ownedError.message, code: "UNKNOWN" };
@@ -255,6 +290,10 @@ export async function fetchUserDecks(): Promise<DeckRepoResult<Deck[]>> {
         id: row.id,
         title: row.title,
         is_public: row.is_public,
+        is_system_deck:
+          "is_system_deck" in row && typeof row.is_system_deck === "boolean"
+            ? row.is_system_deck
+            : false,
         card: row.card as { id: string }[] | null,
       },
       profileResult.data.email,
@@ -313,6 +352,9 @@ export async function fetchDeckDetail(deckId: string): Promise<
             title: mock.title,
             isPublic: mock.visibility === "Public",
             canEdit: true,
+            canDelete: true,
+            canUnsave: false,
+            isSystemDeck: false,
             shareAnonymously: false,
           },
           terms: getMockDeckTerms(deckId),
@@ -329,10 +371,80 @@ export async function fetchDeckDetail(deckId: string): Promise<
   const { data: deckRow, error: deckError } = await supabase
     .from("deck")
     .select(
-      "id, title, is_public, profile_id, author_name, share_anonymously, profile!deck_profile_id_fkey ( email )",
+      "id, title, is_public, is_system_deck, profile_id, author_name, share_anonymously, profile!deck_profile_id_fkey ( email )",
     )
     .eq("id", deckId)
     .maybeSingle();
+
+  if (deckError && isMissingSchemaError(deckError)) {
+    const fallback = await supabase
+      .from("deck")
+      .select(
+        "id, title, is_public, profile_id, author_name, share_anonymously, profile!deck_profile_id_fkey ( email )",
+      )
+      .eq("id", deckId)
+      .maybeSingle();
+
+    if (fallback.error) {
+      return { ok: false, error: fallback.error.message, code: "UNKNOWN" };
+    }
+    if (!fallback.data) {
+      return { ok: false, error: "Deck not found or you do not have access.", code: "NOT_FOUND" };
+    }
+
+    const isOwner = fallback.data.profile_id === profileResult.data.id;
+    if (!isOwner) {
+      const { data: savedRow, error: savedLookupError } = await supabase
+        .from("saved_deck")
+        .select("id")
+        .eq("user_id", profileResult.data.id)
+        .eq("deck_id", deckId)
+        .maybeSingle();
+
+      if (savedLookupError && !isMissingSchemaError(savedLookupError)) {
+        return { ok: false, error: savedLookupError.message, code: "UNKNOWN" };
+      }
+
+      if (!savedRow) {
+        return { ok: false, error: "Deck not found or you do not have access.", code: "NOT_FOUND" };
+      }
+    }
+
+    const { data: cards, error: cardsError } = await supabase
+      .from("card")
+      .select("id, front_question, back_answer, order")
+      .eq("deck_id", deckId)
+      .order("order", { ascending: true, nullsFirst: false });
+
+    if (cardsError) {
+      return { ok: false, error: cardsError.message, code: "UNKNOWN" };
+    }
+
+    const deckProfile = fallback.data.profile as { email: string } | null;
+    const shareAnonymously =
+      "share_anonymously" in fallback.data &&
+      typeof fallback.data.share_anonymously === "boolean"
+        ? fallback.data.share_anonymously
+        : fallback.data.author_name?.trim() === ANONYMOUS_AUTHOR_LABEL;
+
+    return {
+      ok: true,
+      data: {
+        deck: {
+          id: fallback.data.id,
+          title: fallback.data.title,
+          isPublic: fallback.data.is_public,
+          canEdit: isOwner,
+          canDelete: isOwner,
+          canUnsave: !isOwner,
+          isSystemDeck: false,
+          shareAnonymously,
+          authorName: authorNameFromProfile(deckProfile),
+        },
+        terms: (cards ?? []).map(mapCardRow),
+      },
+    };
+  }
 
   if (deckError) {
     return { ok: false, error: deckError.message, code: "UNKNOWN" };
@@ -375,6 +487,11 @@ export async function fetchDeckDetail(deckId: string): Promise<
       ? deckRow.share_anonymously
       : deckRow.author_name?.trim() === ANONYMOUS_AUTHOR_LABEL;
 
+  const isSystemDeck =
+    "is_system_deck" in deckRow && typeof deckRow.is_system_deck === "boolean"
+      ? deckRow.is_system_deck
+      : false;
+
   return {
     ok: true,
     data: {
@@ -383,6 +500,9 @@ export async function fetchDeckDetail(deckId: string): Promise<
         title: deckRow.title,
         isPublic: deckRow.is_public,
         canEdit: isOwner,
+        canDelete: isOwner && canDeleteDeck({ isSystemDeck }),
+        canUnsave: !isOwner,
+        isSystemDeck,
         shareAnonymously,
         authorName: authorNameFromProfile(deckProfile),
       },
@@ -716,6 +836,64 @@ export async function updateDeckShareAnonymously(
   return { ok: true, data: { shareAnonymously: data.share_anonymously } };
 }
 
+function mapDeleteDeckError(message: string): DeckRepoResult<null> {
+  const normalized = message.toUpperCase();
+  if (normalized.includes("NOT_AUTHENTICATED")) {
+    return {
+      ok: false,
+      error: "Sign in to delete decks.",
+      code: "NOT_AUTHENTICATED",
+    };
+  }
+  if (normalized.includes("NOT_FOUND")) {
+    return { ok: false, error: "Deck not found or you do not have access.", code: "NOT_FOUND" };
+  }
+  if (normalized.includes("CANNOT_DELETE_SYSTEM_DECK")) {
+    return {
+      ok: false,
+      error: "The Uncategorized deck cannot be deleted.",
+      code: "FORBIDDEN",
+    };
+  }
+  if (normalized.includes("FORBIDDEN")) {
+    return {
+      ok: false,
+      error: "You can only delete decks that you own.",
+      code: "FORBIDDEN",
+    };
+  }
+  return { ok: false, error: message, code: "UNKNOWN" };
+}
+
+export async function deleteDeck(
+  deckId: string,
+  supabaseOverride?: DbClient,
+): Promise<DeckRepoResult<null>> {
+  const clientResult = supabaseOverride
+    ? ({ ok: true as const, data: supabaseOverride })
+    : await getClient();
+  if (!clientResult.ok) {
+    if (clientResult.code === "NOT_CONFIGURED") {
+      return { ok: true, data: null };
+    }
+    return clientResult;
+  }
+
+  const supabase = clientResult.data;
+  if (!supabaseOverride) {
+    const profileResult = await getCurrentProfile(supabase);
+    if (!profileResult.ok) return profileResult;
+  }
+
+  const { error } = await supabase.rpc("delete_user_deck", { p_deck_id: deckId });
+
+  if (error) {
+    return mapDeleteDeckError(error.message);
+  }
+
+  return { ok: true, data: null };
+}
+
 export async function deleteCard(cardId: string): Promise<DeckRepoResult<null>> {
   if (isLocalCardId(cardId)) {
     return { ok: true, data: null };
@@ -957,4 +1135,83 @@ export async function saveDeckToCollection(
   }
 
   return { ok: true, data: { alreadySaved: false } };
+}
+
+export async function unsaveDeckFromCollection(
+  deckId: string,
+  supabaseOverride?: DbClient,
+): Promise<DeckRepoResult<null>> {
+  const clientResult = supabaseOverride
+    ? ({ ok: true as const, data: supabaseOverride })
+    : await getClient();
+  if (!clientResult.ok) {
+    if (clientResult.code === "NOT_CONFIGURED") {
+      return { ok: true, data: null };
+    }
+    return clientResult;
+  }
+
+  const supabase = clientResult.data;
+  const profileResult = await getCurrentProfile(supabase);
+  if (!profileResult.ok) return profileResult;
+
+  const { data: savedRow, error: savedError } = await supabase
+    .from("saved_deck")
+    .select("id")
+    .eq("user_id", profileResult.data.id)
+    .eq("deck_id", deckId)
+    .maybeSingle();
+
+  if (savedError) {
+    if (isMissingSchemaError(savedError)) {
+      return {
+        ok: false,
+        error: "Community deck saving is not available yet. Apply the latest database migration.",
+        code: "UNKNOWN",
+      };
+    }
+    return { ok: false, error: savedError.message, code: "UNKNOWN" };
+  }
+
+  if (!savedRow) {
+    return {
+      ok: false,
+      error: "This deck is not in your saved collection.",
+      code: "NOT_FOUND",
+    };
+  }
+
+  const { data: deckRow, error: deckError } = await supabase
+    .from("deck")
+    .select("profile_id")
+    .eq("id", deckId)
+    .maybeSingle();
+
+  if (deckError) {
+    return { ok: false, error: deckError.message, code: "UNKNOWN" };
+  }
+
+  if (!deckRow) {
+    return { ok: false, error: "Deck not found.", code: "NOT_FOUND" };
+  }
+
+  if (deckRow.profile_id === profileResult.data.id) {
+    return {
+      ok: false,
+      error: "Use delete deck to remove decks that you own.",
+      code: "FORBIDDEN",
+    };
+  }
+
+  const { error } = await supabase
+    .from("saved_deck")
+    .delete()
+    .eq("user_id", profileResult.data.id)
+    .eq("deck_id", deckId);
+
+  if (error) {
+    return { ok: false, error: error.message, code: "UNKNOWN" };
+  }
+
+  return { ok: true, data: null };
 }

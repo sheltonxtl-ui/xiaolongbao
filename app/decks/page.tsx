@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AppDashboardShell } from "@/components/dashboard/AppDashboardShell";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { DecksPageClient } from "./DecksPageClient";
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 export default function DecksPage() {
   return (
     <AppDashboardShell>
-      <DecksPageClient />
+      <Suspense fallback={null}>
+        <DecksPageClient />
+      </Suspense>
 
       <div className="mt-14">
         <SiteFooter />

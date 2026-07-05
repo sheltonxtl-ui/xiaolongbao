@@ -2,7 +2,9 @@
 
 import {
   createDeckWithCards,
+  deleteDeck,
   saveDeckToCollection,
+  unsaveDeckFromCollection,
   updateDeckShareAnonymously,
   updateDeckVisibility,
   type DeckRepoResult,
@@ -31,6 +33,10 @@ export type UpdateDeckVisibilityResult =
 export type UpdateDeckShareAnonymouslyResult =
   | { ok: true; shareAnonymously: boolean }
   | { ok: false; error: string };
+
+export type DeleteDeckResult = { ok: true } | { ok: false; error: string };
+
+export type UnsaveDeckResult = { ok: true } | { ok: false; error: string };
 
 export async function finalizeGeneratedDeckAction(
   title: string,
@@ -131,4 +137,32 @@ export async function saveDeckAction(deckId: string): Promise<SaveDeckResult> {
     return { ok: false, error: result.error };
   }
   return { ok: true, alreadySaved: result.data.alreadySaved };
+}
+
+export async function deleteDeckAction(deckId: string): Promise<DeleteDeckResult> {
+  const { isConfigured } = getSupabasePublicEnv();
+  if (!isConfigured) {
+    return { ok: true };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const result = await deleteDeck(deckId, supabase);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true };
+}
+
+export async function unsaveDeckAction(deckId: string): Promise<UnsaveDeckResult> {
+  const { isConfigured } = getSupabasePublicEnv();
+  if (!isConfigured) {
+    return { ok: true };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const result = await unsaveDeckFromCollection(deckId, supabase);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true };
 }

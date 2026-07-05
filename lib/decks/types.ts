@@ -9,6 +9,9 @@ export type DeckDetail = {
   title: string;
   isPublic: boolean;
   canEdit: boolean;
+  canDelete: boolean;
+  canUnsave: boolean;
+  isSystemDeck: boolean;
   shareAnonymously: boolean;
   description?: string;
   authorName?: string;

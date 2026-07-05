@@ -103,5 +103,5 @@ export function DecksLibraryLoader({
     );
   }
 
-  return <DecksLibrary decks={state.decks} />;
+  return <DecksLibrary decks={state.decks} onDeckDeleted={load} />;
 }

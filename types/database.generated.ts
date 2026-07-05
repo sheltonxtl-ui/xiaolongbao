@@ -53,6 +53,7 @@ export type Database = {
           description: string
           id: string
           is_public: boolean
+          is_system_deck: boolean
           profile_id: string
           share_anonymously: boolean
           title: string
@@ -63,6 +64,7 @@ export type Database = {
           description?: string
           id?: string
           is_public?: boolean
+          is_system_deck?: boolean
           profile_id: string
           share_anonymously?: boolean
           title: string
@@ -73,6 +75,7 @@ export type Database = {
           description?: string
           id?: string
           is_public?: boolean
+          is_system_deck?: boolean
           profile_id?: string
           share_anonymously?: boolean
           title?: string
@@ -162,7 +165,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_user_deck: {
+        Args: {
+          p_deck_id: string
+        }
+        Returns: undefined
+      }
+      ensure_uncategorized_deck: {
+        Args: {
+          p_profile_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PlayIcon } from "@heroicons/react/16/solid";
 import { PlusIcon } from "@heroicons/react/20/solid";
 import {
+  deleteDeckAction,
   updateDeckShareAnonymouslyAction,
   updateDeckVisibilityAction,
 } from "@/app/actions/decks";
@@ -27,6 +29,8 @@ import {
   DeckSaveStatus,
   type DeckSaveStatusState,
 } from "@/components/decks/DeckAsyncState";
+import { DeckDeleteDialog } from "@/components/decks/DeckDeleteDialog";
+import { DeckToast } from "@/components/decks/DeckToast";
 import {
   FlashcardEditor,
   type FlashcardEditorItem,
@@ -55,14 +59,17 @@ export function DeckCardManagement({
   deckTitle,
   isPublic: initialIsPublic,
   shareAnonymously: initialShareAnonymously,
+  canDelete = false,
   terms,
 }: {
   deckId: string;
   deckTitle: string;
   isPublic: boolean;
   shareAnonymously: boolean;
+  canDelete?: boolean;
   terms: DeckTerm[];
 }) {
+  const router = useRouter();
   const [rows, setRows] = useState<EditorRow[]>(() => termsToRows(terms));
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [shareAnonymously, setShareAnonymously] = useState(initialShareAnonymously);
@@ -72,6 +79,10 @@ export function DeckCardManagement({
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deckDeleteOpen, setDeckDeleteOpen] = useState(false);
+  const [deckDeleteLoading, setDeckDeleteLoading] = useState(false);
+  const [deckDeleteError, setDeckDeleteError] = useState<string | null>(null);
+  const [deckDeleteToast, setDeckDeleteToast] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<DeckSaveStatusState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const objectUrls = useRef<Set<string>>(new Set());
@@ -279,6 +290,30 @@ export function DeckCardManagement({
     ]);
   }, [deckId]);
 
+  const handleDeckDeleteCancel = useCallback(() => {
+    if (deckDeleteLoading) return;
+    setDeckDeleteOpen(false);
+    setDeckDeleteError(null);
+  }, [deckDeleteLoading]);
+
+  const handleDeckDeleteConfirm = useCallback(async () => {
+    if (deckDeleteLoading) return;
+    setDeckDeleteLoading(true);
+    setDeckDeleteError(null);
+
+    const result = await deleteDeckAction(deckId);
+    setDeckDeleteLoading(false);
+
+    if (!result.ok) {
+      setDeckDeleteError(result.error);
+      setDeckDeleteToast(result.error);
+      return;
+    }
+
+    setDeckDeleteOpen(false);
+    router.push("/decks?deleted=1");
+  }, [deckDeleteLoading, deckId, router]);
+
   const count = rows.length;
   const summaryLabel = useMemo(
     () => (count === 1 ? "1 card" : `${count} cards`),
@@ -311,6 +346,22 @@ export function DeckCardManagement({
           </Button>
         </AlertActions>
       </Alert>
+
+      <DeckDeleteDialog
+        open={deckDeleteOpen}
+        onClose={handleDeckDeleteCancel}
+        onConfirm={() => void handleDeckDeleteConfirm()}
+        loading={deckDeleteLoading}
+        error={deckDeleteError}
+      />
+
+      {deckDeleteToast && !deckDeleteOpen ? (
+        <DeckToast
+          message={deckDeleteToast}
+          tone="error"
+          onDismiss={() => setDeckDeleteToast(null)}
+        />
+      ) : null}
 
       <section className="w-full" aria-labelledby="deck-manage-heading">
         <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -374,6 +425,18 @@ export function DeckCardManagement({
               <PlusIcon data-slot="icon" />
               Add card
             </Button>
+            {canDelete ? (
+              <Button
+                plain
+                onClick={() => {
+                  setDeckDeleteError(null);
+                  setDeckDeleteOpen(true);
+                }}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                Delete deck
+              </Button>
+            ) : null}
           </div>
         </header>
 
