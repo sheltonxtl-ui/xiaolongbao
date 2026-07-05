@@ -48,7 +48,7 @@ export type Deck = {
 
 const DECKS_PER_PAGE = 3;
 
-type FilterTab = "all" | "recent" | "public" | "community";
+type FilterTab = "all" | "recent" | "public" | "community" | "uncategorized";
 
 function DeckStudyCard({
   deck,
@@ -81,7 +81,7 @@ function DeckStudyCard({
         </Link>
       </h3>
       <span className="min-w-0 truncate text-xs/5 text-zinc-500 dark:text-zinc-400">
-        {isCommunity ? `by ${deck.creator}` : deck.creator}
+        {deck.creator}
       </span>
       <Badge color={visibilityColor} className="w-fit whitespace-nowrap py-px text-[0.6875rem]/4">
         {isCommunity ? "Community" : deck.visibility}
@@ -97,12 +97,14 @@ function DeckStudyCard({
           <Button
             plain
             onClick={() => removeHandler(deck)}
-            className="!inline-flex !h-7 !min-h-0 !items-center !justify-center !rounded-md !px-1.5 !py-0 !text-xs/5 !text-red-600 hover:!text-red-700 dark:!text-red-400 dark:hover:!text-red-300"
+            className="!inline-flex !h-7 !w-7 !min-h-0 !shrink-0 !items-center !justify-center !rounded-md !px-0 !py-0 !text-xs/5 !text-red-600 hover:!text-red-700 dark:!text-red-400 dark:hover:!text-red-300"
             aria-label={removeLabel}
           >
             <TrashIcon data-slot="icon" className="!size-4" />
           </Button>
-        ) : null}
+        ) : (
+          <span className="inline-flex h-7 w-7 shrink-0" aria-hidden="true" />
+        )}
         <Button
           color="indigo"
           href={`/decks/${deck.id}/study`}
@@ -143,6 +145,8 @@ export function DecksLibrary({
       list = list.filter((d) => d.visibility === "Public" && !d.isCommunityDeck);
     } else if (tab === "community") {
       list = list.filter((d) => d.isCommunityDeck);
+    } else if (tab === "uncategorized") {
+      list = list.filter((d) => d.isSystemDeck);
     } else if (tab === "recent") {
       list = [...list].sort((a, b) => a.updatedRank - b.updatedRank);
     }
@@ -288,6 +292,7 @@ export function DecksLibrary({
                   <option value="recent">Recently updated</option>
                   <option value="public">Public only</option>
                   <option value="community">Community saved</option>
+                  <option value="uncategorized">Uncategorized</option>
                 </Select>
               </Field>
             </div>

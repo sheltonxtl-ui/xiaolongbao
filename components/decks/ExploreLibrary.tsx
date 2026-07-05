@@ -41,7 +41,7 @@ function ExploreDeckCard({ deck }: { deck: ExploreDeck }) {
         ) : null}
       </div>
       <Text className="mt-2 h-5 shrink-0 truncate text-sm text-zinc-500 dark:text-zinc-400">
-        by {deck.authorName}
+        {deck.authorName}
       </Text>
       <div className="flex-1" aria-hidden="true" />
       <div className="mt-4 flex h-8 shrink-0 items-center justify-between gap-3 border-t border-zinc-950/5 pt-4 dark:border-white/5">
