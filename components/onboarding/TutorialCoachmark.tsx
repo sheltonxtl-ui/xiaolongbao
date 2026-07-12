@@ -49,43 +49,30 @@ function resolvePanelPosition(
     };
   }
 
-  const space = {
+  type Side = "top" | "bottom" | "left" | "right";
+  const space: Record<Side, number> = {
     top: target.top - VIEWPORT_PAD,
     bottom: window.innerHeight - (target.top + target.height) - VIEWPORT_PAD,
     left: target.left - VIEWPORT_PAD,
     right: window.innerWidth - (target.left + target.width) - VIEWPORT_PAD,
   };
 
-  const order: TutorialPlacement[] =
+  const fits = (side: Side): boolean => {
+    if (side === "top" || side === "bottom") {
+      return space[side] >= height + PANEL_GAP;
+    }
+    return space[side] >= width + PANEL_GAP;
+  };
+
+  const fallbackOrder: Side[] = ["bottom", "top", "right", "left"];
+  const order: Side[] =
     preferred === "auto"
-      ? (["bottom", "top", "right", "left"] as TutorialPlacement[])
-      : ([preferred, "bottom", "top", "right", "left", "center"] as TutorialPlacement[]);
+      ? fallbackOrder
+      : [preferred, ...fallbackOrder.filter((side) => side !== preferred)];
 
-  let placement: TutorialPlacement = "center";
-  for (const candidate of order) {
-    if (candidate === "center") {
-      placement = "center";
-      break;
-    }
-    if (candidate === "top" || candidate === "bottom") {
-      if (space[candidate] >= height + PANEL_GAP) {
-        placement = candidate;
-        break;
-      }
-    } else if (candidate === "left" || candidate === "right") {
-      if (space[candidate] >= width + PANEL_GAP) {
-        placement = candidate;
-        break;
-      }
-    }
-  }
-
-  // Prefer the side with the most room if nothing fully fits.
-  if (placement === "center" && preferred !== "center") {
-    const ranked = (Object.entries(space) as [TutorialPlacement, number][]).sort(
-      (a, b) => b[1] - a[1],
-    );
-    placement = ranked[0]?.[0] ?? "bottom";
+  let placement: Side | null = order.find(fits) ?? null;
+  if (!placement) {
+    placement = (Object.entries(space) as [Side, number][]).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "bottom";
   }
 
   let top = VIEWPORT_PAD;
@@ -106,13 +93,6 @@ function resolvePanelPosition(
       top = target.top + target.height / 2 - height / 2;
       left = target.left + target.width + PANEL_GAP;
       break;
-    case "center":
-    default:
-      return {
-        top: Math.max(VIEWPORT_PAD, (window.innerHeight - height) / 2),
-        left: Math.max(VIEWPORT_PAD, (window.innerWidth - width) / 2),
-        width,
-      };
   }
 
   const maxTop = Math.max(VIEWPORT_PAD, window.innerHeight - height - VIEWPORT_PAD);
