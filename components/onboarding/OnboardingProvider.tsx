@@ -254,17 +254,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
 
-    // Re-bootstrap whenever the signed-in user changes (including null → user after signup).
+    // Skip only after a successful bootstrap for this user. Do not mark the ref
+    // before the async work finishes — React Strict Mode (dev) remounts effects,
+    // and an early mark + cancelled run would permanently skip the welcome tour.
     if (bootstrappedUserIdRef.current === userId) return;
 
     let cancelled = false;
-    bootstrappedUserIdRef.current = userId;
+    const targetUserId = userId;
 
     async function bootstrap() {
-      await Promise.resolve();
-      if (cancelled) return;
-
-      if (!isSignedIn || !userId) {
+      if (!isSignedIn || !targetUserId) {
+        if (cancelled) return;
+        bootstrappedUserIdRef.current = targetUserId;
         setIsReady(true);
         setHasCompletedTutorial(true);
         setPhase("idle");
@@ -275,9 +276,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
       setIsReady(false);
 
-      const localProgress = readTutorialProgress(userId);
-      const localTips = readSeenTooltips(userId);
-      const localCompleted = readLocalTutorialCompleted(userId);
+      const localProgress = readTutorialProgress(targetUserId);
+      const localTips = readSeenTooltips(targetUserId);
+      const localCompleted = readLocalTutorialCompleted(targetUserId);
       const result = await getOnboardingProfileAction();
       if (cancelled) return;
 
@@ -287,7 +288,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         ...(remote.onboardingState.seenTooltips ?? []),
       ]);
       setSeenTooltips(mergedTips);
-      writeSeenTooltips([...mergedTips], userId);
+      writeSeenTooltips([...mergedTips], targetUserId);
 
       const completed = remote.hasCompletedTutorial || localCompleted;
       setHasCompletedTutorial(completed);
@@ -319,7 +320,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setIsReplay(false);
         setStepIndex(idx);
         setPhase(nextPhase);
-        persistLocal({ phase: nextPhase, stepIndex: idx, replay: false }, userId);
+        persistLocal({ phase: nextPhase, stepIndex: idx, replay: false }, targetUserId);
         if (nextPhase === "touring") {
           const resumeStep = getTutorialStep(idx);
           if (resumeStep) ensureRouteForStep(resumeStep);
@@ -328,7 +329,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setIsReplay(false);
         setStepIndex(0);
         setPhase("welcome");
-        persistLocal({ phase: "welcome", stepIndex: 0, replay: false }, userId);
+        persistLocal({ phase: "welcome", stepIndex: 0, replay: false }, targetUserId);
         persistRemoteProgress(0, "welcome");
         if (!routeMatches(pathname, "/decks")) {
           router.push("/decks");
@@ -337,6 +338,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setPhase("idle");
       }
 
+      bootstrappedUserIdRef.current = targetUserId;
       setIsReady(true);
     }
 
