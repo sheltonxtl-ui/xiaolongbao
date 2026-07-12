@@ -8,6 +8,7 @@ import {
   DeckLoadingPanel,
 } from "@/components/decks/DeckAsyncState";
 import { DecksLibrary, type Deck } from "@/components/decks/DecksLibrary";
+import { FeatureTip } from "@/components/onboarding/FeatureTip";
 import { fetchUserDecks } from "@/lib/decks/repository";
 
 type LoadState =
@@ -78,7 +79,7 @@ export function DecksLibraryLoader({
 
   if (state.decks.length === 0) {
     return (
-      <section className="w-full" aria-labelledby="decks-empty-heading">
+      <section className="w-full" aria-labelledby="decks-empty-heading" data-tour="decks-library">
         <header className="mb-8">
           <h1 className="text-2xl/8 font-semibold text-zinc-950 sm:text-xl/8 dark:text-white">
             Your decks
@@ -94,9 +95,11 @@ export function DecksLibraryLoader({
           className="mt-6"
           variant="plain"
           actions={
-            <Button color="indigo" href="/generate">
-              New deck
-            </Button>
+            <FeatureTip tipId="new-deck">
+              <Button color="indigo" href="/generate" data-tour="cta-new-deck">
+                New deck
+              </Button>
+            </FeatureTip>
           }
         />
       </section>

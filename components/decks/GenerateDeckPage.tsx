@@ -24,6 +24,7 @@ import {
   ImportDeckForm,
   type ImportDeckSource,
 } from "@/components/decks/ImportDeckForm";
+import { FeatureTip } from "@/components/onboarding/FeatureTip";
 import { countWords, MAX_NOTES_WORDS } from "@/lib/decks/wordCount";
 import { suggestTitleFromUrl } from "@/lib/flashcards/suggest-title";
 import { useFlashcardGenerationStream } from "@/lib/hooks/useFlashcardGenerationStream";
@@ -206,7 +207,7 @@ export function GenerateDeckPage() {
 
   return (
     <>
-      <section className="w-full">
+      <section className="w-full" data-tour="generate-workspace">
         <header className="mb-8">
           <Heading>New deck</Heading>
           <Text className="mt-2 max-w-2xl">
@@ -252,6 +253,7 @@ export function GenerateDeckPage() {
                       }}
                       aria-describedby="deck-notes-word-count"
                       invalid={isOverLimit || undefined}
+                      data-tour="notes-input"
                       className="[&_[data-slot=control]]:before:rounded-none [&_[data-slot=control]]:after:rounded-none [&_[data-slot=control]]:rounded-none [&_textarea]:min-h-72 [&_textarea]:rounded-none [&_textarea]:border-0 [&_textarea]:pb-2"
                     />
                     <div
@@ -277,13 +279,16 @@ export function GenerateDeckPage() {
                   <Button outline href="/decks">
                     Back to decks
                   </Button>
-                  <Button
-                    color="indigo"
-                    disabled={!canGenerate || isGenerating}
-                    onClick={handleGenerate}
-                  >
-                    Generate deck
-                  </Button>
+                  <FeatureTip tipId="generate-ai">
+                    <Button
+                      color="indigo"
+                      disabled={!canGenerate || isGenerating}
+                      onClick={handleGenerate}
+                      data-tour="cta-generate"
+                    >
+                      Generate deck
+                    </Button>
+                  </FeatureTip>
                 </div>
               </TabPanel>
 

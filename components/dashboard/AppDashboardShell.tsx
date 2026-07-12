@@ -47,12 +47,13 @@ import {
 import { signOut } from "@/lib/auth/client";
 import { getUserDisplayName, getUserEmail, getUserInitials } from "@/lib/auth/display";
 import { useAuthUser } from "@/lib/hooks/useAuthUser";
+import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 
 function iconProps() {
   return { "data-slot": "icon" as const };
 }
 
-export function AppDashboardShell({ children }: { children: React.ReactNode }) {
+function AppDashboardShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isSignedIn } = useAuthUser();
@@ -62,6 +63,8 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
   const onExplore = pathname === "/explore" || pathname.startsWith("/explore/");
   const onGenerate = pathname === "/generate" || pathname.startsWith("/generate/");
   const onBilling = pathname === "/billing" || pathname.startsWith("/billing/");
+  const onSettings = pathname === "/settings" || pathname.startsWith("/settings/");
+  const onHelp = pathname === "/help" || pathname.startsWith("/help/");
   const onHome = pathname === "/";
 
   const displayName = user ? getUserDisplayName(user) : "Guest";
@@ -85,13 +88,17 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
 
   const accountMenu = isSignedIn ? (
     <>
-      <DropdownItem href="/pricing">
+      <DropdownItem href="/settings">
         <UserIcon {...iconProps()} />
         <DropdownLabel>My profile</DropdownLabel>
       </DropdownItem>
-      <DropdownItem href="/pricing">
+      <DropdownItem href="/settings">
         <Cog8ToothIcon {...iconProps()} />
         <DropdownLabel>Settings</DropdownLabel>
+      </DropdownItem>
+      <DropdownItem href="/help">
+        <QuestionMarkCircleIcon {...iconProps()} />
+        <DropdownLabel>Help Center</DropdownLabel>
       </DropdownItem>
       <DropdownDivider />
       <DropdownItem href="/">
@@ -128,7 +135,7 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
               <ChevronDownIcon {...iconProps()} />
             </DropdownButton>
             <DropdownMenu className="min-w-80 lg:min-w-64" anchor="bottom start">
-              <DropdownItem href="/pricing">
+              <DropdownItem href="/settings">
                 <Cog8ToothIcon {...iconProps()} />
                 <DropdownLabel>Workspace settings</DropdownLabel>
               </DropdownItem>
@@ -149,45 +156,45 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
           </Dropdown>
           <SidebarSection className="max-lg:hidden">
-            <SidebarItem href="/decks">
+            <SidebarItem href="/decks" data-tour="nav-search">
               <MagnifyingGlassIcon {...iconProps()} />
               <SidebarLabel>Search decks</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/generate">
+            <SidebarItem href="/generate" data-tour="nav-generate-shortcut">
               <InboxIcon {...iconProps()} />
               <SidebarLabel>Generate</SidebarLabel>
             </SidebarItem>
           </SidebarSection>
         </SidebarHeader>
-        <SidebarBody>
+        <SidebarBody data-tour="nav-sidebar">
           <SidebarSection>
-            <SidebarItem href="/" current={onHome}>
+            <SidebarItem href="/" current={onHome} data-tour="nav-home">
               <HomeIcon {...iconProps()} />
               <SidebarLabel>Home</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/decks" current={onDecks}>
+            <SidebarItem href="/decks" current={onDecks} data-tour="nav-decks">
               <Square2StackIcon {...iconProps()} />
               <SidebarLabel>Decks</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/explore" current={onExplore}>
+            <SidebarItem href="/explore" current={onExplore} data-tour="nav-explore" title="Browse community decks">
               <MagnifyingGlassIcon {...iconProps()} />
               <SidebarLabel>Explore</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/generate" current={onGenerate}>
+            <SidebarItem href="/generate" current={onGenerate} data-tour="nav-generate" title="Generate flashcards from notes with AI">
               <SparklesIcon {...iconProps()} />
               <SidebarLabel>Generate</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/pricing">
+            <SidebarItem href="/pricing" data-tour="nav-pricing">
               <MegaphoneIcon {...iconProps()} />
               <SidebarLabel>Pricing</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/billing" current={onBilling}>
+            <SidebarItem href="/billing" current={onBilling} data-tour="nav-billing">
               <CreditCardIcon {...iconProps()} />
               <SidebarLabel>Billing</SidebarLabel>
             </SidebarItem>
-            <SidebarItem href="/pricing">
+            <SidebarItem href="/settings" current={onSettings} data-tour="nav-settings" title="Open settings">
               <Cog6ToothIcon {...iconProps()} />
-              <SidebarLabel>Account</SidebarLabel>
+              <SidebarLabel>Settings</SidebarLabel>
             </SidebarItem>
           </SidebarSection>
           <SidebarSection className="max-lg:hidden">
@@ -199,9 +206,9 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
           </SidebarSection>
           <SidebarSpacer />
           <SidebarSection>
-            <SidebarItem href="/pricing">
+            <SidebarItem href="/help" current={onHelp} data-tour="nav-help">
               <QuestionMarkCircleIcon {...iconProps()} />
-              <SidebarLabel>Support</SidebarLabel>
+              <SidebarLabel>Help</SidebarLabel>
             </SidebarItem>
             <SidebarItem href="/">
               <ArrowTopRightOnSquareIcon {...iconProps()} />
@@ -250,10 +257,10 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
     <Navbar>
       <NavbarSpacer />
       <NavbarSection>
-        <NavbarItem href="/explore" aria-label="Explore community decks">
+        <NavbarItem href="/explore" aria-label="Explore community decks" data-tour="nav-explore-mobile">
           <MagnifyingGlassIcon {...iconProps()} />
         </NavbarItem>
-        <NavbarItem href="/generate" aria-label="Generate flashcards">
+        <NavbarItem href="/generate" aria-label="Generate flashcards" data-tour="nav-generate-mobile">
           <InboxIcon {...iconProps()} />
         </NavbarItem>
         <Dropdown>
@@ -274,4 +281,12 @@ export function AppDashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   return <SidebarLayout navbar={navbar} sidebar={sidebar}>{children}</SidebarLayout>;
+}
+
+export function AppDashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <OnboardingProvider>
+      <AppDashboardShellInner>{children}</AppDashboardShellInner>
+    </OnboardingProvider>
+  );
 }

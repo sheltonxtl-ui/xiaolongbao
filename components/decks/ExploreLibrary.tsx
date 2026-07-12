@@ -17,6 +17,7 @@ import {
 import { Select } from "@/components/catalyst/select";
 import { Strong, Text } from "@/components/catalyst/text";
 import { DeckEmptyPanel } from "@/components/decks/DeckAsyncState";
+import { FeatureTip } from "@/components/onboarding/FeatureTip";
 import type { ExploreDeck } from "@/lib/decks/types";
 
 const DECKS_PER_PAGE = 6;
@@ -95,13 +96,17 @@ export function ExploreLibrary({ decks }: { decks: ExploreDeck[] }) {
   }, [totalPages]);
 
   return (
-    <section className="w-full">
+    <section className="w-full" data-tour="explore-library">
       <header className="mb-8">
-        <Heading>Explore community decks</Heading>
-        <Text className="mt-2 max-w-2xl">
-          Browse flashcard decks shared by the community. Preview a deck and save it to your
-          collection to study anytime. Your own public decks appear here too.
-        </Text>
+        <FeatureTip tipId="community" className="block w-full max-w-2xl">
+          <div>
+            <Heading>Explore community decks</Heading>
+            <Text className="mt-2 max-w-2xl">
+              Browse flashcard decks shared by the community. Preview a deck and save it to your
+              collection to study anytime. Your own public decks appear here too.
+            </Text>
+          </div>
+        </FeatureTip>
       </header>
 
       <Fieldset>

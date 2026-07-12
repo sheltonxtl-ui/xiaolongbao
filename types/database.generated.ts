@@ -137,25 +137,34 @@ export type Database = {
         Row: {
           billing_period: string | null
           email: string
+          has_completed_tutorial: boolean
           id: string
+          onboarding_state: Record<string, unknown>
           plan_type: string
           subscription_status: string
+          tutorial_completed_at: string | null
           user_id: string
         }
         Insert: {
           billing_period?: string | null
           email: string
+          has_completed_tutorial?: boolean
           id?: string
+          onboarding_state?: Record<string, unknown>
           plan_type?: string
           subscription_status?: string
+          tutorial_completed_at?: string | null
           user_id: string
         }
         Update: {
           billing_period?: string | null
           email?: string
+          has_completed_tutorial?: boolean
           id?: string
+          onboarding_state?: Record<string, unknown>
           plan_type?: string
           subscription_status?: string
+          tutorial_completed_at?: string | null
           user_id?: string
         }
         Relationships: []

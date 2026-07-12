@@ -17,7 +17,8 @@
     "db:migrate:community": "node scripts/apply-community-migration.mjs",
     "db:migrate:fix-profile-rls": "node scripts/apply-profile-rls-fix.mjs",
     "db:migrate:fix-public-cards": "node scripts/apply-public-card-rls-fix.mjs",
-    "db:migrate:uncategorized": "node scripts/apply-uncategorized-deck-migration.mjs"
+    "db:migrate:uncategorized": "node scripts/apply-uncategorized-deck-migration.mjs",
+    "db:migrate:onboarding": "node scripts/apply-onboarding-migration.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",

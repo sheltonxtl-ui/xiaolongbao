@@ -410,18 +410,19 @@ export function DeckCardManagement({
             ) : null}
             <DeckSaveStatus status={saveStatus} errorMessage={saveError} className="mt-2" />
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2" data-tour="deck-manage-actions">
             {count > 0 ? (
               <Button
                 color="indigo"
                 href={`/decks/${deckId}/study`}
                 aria-label={`Study ${deckTitle}`}
+                data-tour="cta-study"
               >
                 <PlayIcon data-slot="icon" />
                 Play
               </Button>
             ) : null}
-            <Button outline onClick={handleAddCard} aria-label="Add a new card">
+            <Button outline onClick={handleAddCard} aria-label="Add a new card" data-tour="cta-add-card">
               <PlusIcon data-slot="icon" />
               Add card
             </Button>
@@ -433,6 +434,7 @@ export function DeckCardManagement({
                   setDeckDeleteOpen(true);
                 }}
                 className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                data-tour="cta-delete-deck"
               >
                 Delete deck
               </Button>

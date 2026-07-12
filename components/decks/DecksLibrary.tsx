@@ -23,6 +23,7 @@ import { DeckDeleteDialog } from "@/components/decks/DeckDeleteDialog";
 import { DeckEmptyPanel } from "@/components/decks/DeckAsyncState";
 import { DeckToast } from "@/components/decks/DeckToast";
 import { DeckUnsaveDialog } from "@/components/decks/DeckUnsaveDialog";
+import { FeatureTip } from "@/components/onboarding/FeatureTip";
 import {
   COMMUNITY_DECK_UNSAVE_SUCCESS_MESSAGE,
   DECK_DELETE_SUCCESS_MESSAGE,
@@ -54,10 +55,14 @@ function DeckStudyCard({
   deck,
   onDeleteRequest,
   onRemoveRequest,
+  tourTarget = false,
+  showStudyTip = false,
 }: {
   deck: Deck;
   onDeleteRequest?: (deck: Deck) => void;
   onRemoveRequest?: (deck: Deck) => void;
+  tourTarget?: boolean;
+  showStudyTip?: boolean;
 }) {
   const isCommunity = deck.isCommunityDeck === true;
   const visibilityColor: Parameters<typeof Badge>[0]["color"] = isCommunity
@@ -69,6 +74,19 @@ function DeckStudyCard({
   const showRemove = canRemoveFromLibrary(deck);
   const removeHandler = isCommunity ? onRemoveRequest : onDeleteRequest;
   const removeLabel = isCommunity ? `Remove ${deck.title} from library` : `Delete ${deck.title}`;
+
+  const studyButton = (
+    <Button
+      color="indigo"
+      href={`/decks/${deck.id}/study`}
+      className="!inline-flex !h-7 !min-h-0 !items-center !justify-center !gap-x-1 !rounded-md !px-1.5 !py-0 !text-xs/5 !leading-none !font-semibold sm:!h-7 sm:!px-2 sm:!py-0 sm:!text-xs/5 *:data-[slot=icon]:!m-0 *:data-[slot=icon]:!size-3 sm:*:data-[slot=icon]:!size-3"
+      aria-label={`Play ${deck.title}`}
+      data-tour={tourTarget ? "cta-study" : undefined}
+    >
+      <PlayIcon data-slot="icon" />
+      <span className="hidden sm:inline">Play</span>
+    </Button>
+  );
 
   return (
     <>
@@ -105,15 +123,7 @@ function DeckStudyCard({
         ) : (
           <span className="inline-flex h-7 w-7 shrink-0" aria-hidden="true" />
         )}
-        <Button
-          color="indigo"
-          href={`/decks/${deck.id}/study`}
-          className="!inline-flex !h-7 !min-h-0 !items-center !justify-center !gap-x-1 !rounded-md !px-1.5 !py-0 !text-xs/5 !leading-none !font-semibold sm:!h-7 sm:!px-2 sm:!py-0 sm:!text-xs/5 *:data-[slot=icon]:!m-0 *:data-[slot=icon]:!size-3 sm:*:data-[slot=icon]:!size-3"
-          aria-label={`Play ${deck.title}`}
-        >
-          <PlayIcon data-slot="icon" />
-          <span className="hidden sm:inline">Play</span>
-        </Button>
+        {showStudyTip ? <FeatureTip tipId="study">{studyButton}</FeatureTip> : studyButton}
       </div>
     </>
   );
@@ -259,7 +269,7 @@ export function DecksLibrary({
         <DeckToast message={errorToast} tone="error" onDismiss={() => setErrorToast(null)} />
       ) : null}
 
-      <section className="w-full">
+      <section className="w-full" data-tour="decks-library">
         <header className="mb-8">
           <Heading>Your decks</Heading>
           <Text className="mt-2 max-w-2xl">
@@ -273,13 +283,16 @@ export function DecksLibrary({
             <div className="grid w-full gap-6 sm:grid-cols-2 lg:max-w-xl lg:flex-1 xl:max-w-2xl">
               <Field>
                 <Label>Search</Label>
-                <Input
-                  type="search"
-                  aria-label="Search decks"
-                  placeholder="Search by title or topic…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
+                <FeatureTip tipId="search" className="w-full">
+                  <Input
+                    type="search"
+                    aria-label="Search decks"
+                    placeholder="Search by title or topic…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    data-tour="search-decks"
+                  />
+                </FeatureTip>
               </Field>
               <Field>
                 <Label>View</Label>
@@ -287,6 +300,7 @@ export function DecksLibrary({
                   value={tab}
                   onChange={(e) => setTab(e.target.value as FilterTab)}
                   aria-label="Filter decks by view"
+                  data-tour="filter-decks"
                 >
                   <option value="all">All decks</option>
                   <option value="recent">Recently updated</option>
@@ -297,9 +311,11 @@ export function DecksLibrary({
               </Field>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <Button color="indigo" href="/generate">
-                New deck
-              </Button>
+              <FeatureTip tipId="new-deck">
+                <Button color="indigo" href="/generate" data-tour="cta-new-deck">
+                  New deck
+                </Button>
+              </FeatureTip>
             </div>
           </div>
         </Fieldset>
@@ -338,7 +354,7 @@ export function DecksLibrary({
               className="mt-5 list-none divide-y divide-zinc-950/10 overflow-x-auto overflow-y-hidden rounded-lg border border-zinc-950/10 bg-white ring-1 ring-zinc-950/5 dark:divide-white/10 dark:border-white/10 dark:bg-zinc-900/40 dark:ring-white/10"
               aria-label="Your decks"
             >
-              {pagedDecks.map((deck) => (
+              {pagedDecks.map((deck, index) => (
                 <li
                   key={deck.id}
                   className={
@@ -351,6 +367,8 @@ export function DecksLibrary({
                     deck={deck}
                     onDeleteRequest={setPendingDeleteDeck}
                     onRemoveRequest={setPendingUnsaveDeck}
+                    tourTarget={index === 0}
+                    showStudyTip={index === 0}
                   />
                 </li>
               ))}
